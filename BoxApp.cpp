@@ -1,9 +1,3 @@
-//***************************************************************************************
-// Controls:
-//   Hold the left mouse button down and move the mouse to rotate.
-//   Hold the right mouse button down and move the mouse to zoom in and out.
-//***************************************************************************************
-
 #include "Common/d3dApp.h"
 #include "Common/MathHelper.h"
 #include "Common/UploadBuffer.h"
@@ -322,12 +316,6 @@ void BoxApp::BuildConstantBuffers()
 
 void BoxApp::BuildRootSignature()
 {
-	// Shader programs typically require resources as input (constant buffers,
-	// textures, samplers).  The root signature defines the resources the shader
-	// programs expect.  If we think of the shader programs as a function, and
-	// the input resources as function parameters, then the root signature can be
-	// thought of as defining the function signature.  
-
 	// Root parameter can be a table, root descriptor or root constants.
 	CD3DX12_ROOT_PARAMETER slotRootParameter[1];
 
@@ -363,8 +351,8 @@ void BoxApp::BuildShadersAndInputLayout()
 {
     HRESULT hr = S_OK;
     
-	mvsByteCode = d3dUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
-	mpsByteCode = d3dUtil::CompileShader(L"Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
+	mvsByteCode = d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl", nullptr, "VS", "vs_5_0");
+	mpsByteCode = d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl", nullptr, "PS", "ps_5_0");
 
     mInputLayout =
     {
@@ -372,18 +360,6 @@ void BoxApp::BuildShadersAndInputLayout()
         { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
     };
 
-	/*
-	mInputLayout = 
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_FLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_FLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D12_INPUT_FLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"TEXTURE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 36, D3D12_INPUT_FLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"TEXTURE", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 44, D3D12_INPUT_FLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"COLOUR", 0, DXGI_FORMAT_R32_FLOAT, 0, 52, D3D12_INPUT_FLASSIFICATION_PER_VERTEX_DATA, 0}
-	};
-	
-	*/
 }
 
 void BoxApp::BuildBoxGeometry()
