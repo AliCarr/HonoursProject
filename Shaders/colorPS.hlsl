@@ -15,12 +15,12 @@ struct VertexOut
 
 float4 PS(VertexOut pin) : SV_Target
 {
-	const float pi = 3.14159;
-	float s = 0.5f*sin(2 * gTime - 0.25f*pi) + 0.5f;
+	//const float pi = 3.14159;
+	//float s = 0.5f*sin(2 * gTime - 0.25f*pi) + 0.5f;
 
-	float4 c = lerp(pin.colour, pulseColour, s);
+	//float4 c = lerp(pin.colour, pulseColour, s);
 
-   return c;
+   return pin.colour;
 }
 
 
