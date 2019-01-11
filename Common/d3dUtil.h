@@ -165,17 +165,17 @@ struct MeshGeometry
 	// System memory copies.  Use Blobs because the vertex/index format can be generic.
 	// It is up to the client to cast appropriately.  
 	Microsoft::WRL::ComPtr<ID3DBlob> VertexBufferCPU = nullptr;
-	Microsoft::WRL::ComPtr<ID3DBlob> VertexBufferCPU2 = nullptr;
+	//Microsoft::WRL::ComPtr<ID3DBlob> VertexBufferCPU2 = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3DBlob> IndexBufferCPU  = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferGPU = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferGPU2 = nullptr;
+	//Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferGPU2 = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader2 = nullptr;
+	//Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader2 = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
 
@@ -183,8 +183,8 @@ struct MeshGeometry
 	UINT VertexByteStride = 0;
 	UINT VertexBufferByteSize = 0;
 
-	UINT VertexByteStride2 = 0;
-	UINT VertexBufferByteSize2 = 0;
+//	UINT VertexByteStride2 = 0;
+	//UINT VertexBufferByteSize2 = 0;
 
 
 	DXGI_FORMAT IndexFormat = DXGI_FORMAT_R16_UINT;
@@ -205,15 +205,15 @@ struct MeshGeometry
 		return vbv;
 	}
 
-	D3D12_VERTEX_BUFFER_VIEW VertexBufferView2()const
-	{
-		D3D12_VERTEX_BUFFER_VIEW vbv;
-		vbv.BufferLocation = VertexBufferGPU2->GetGPUVirtualAddress();
-		vbv.StrideInBytes = VertexByteStride;
-		vbv.SizeInBytes = VertexBufferByteSize;
+	//D3D12_VERTEX_BUFFER_VIEW VertexBufferView2()const
+	//{
+	//	D3D12_VERTEX_BUFFER_VIEW vbv;
+	//	vbv.BufferLocation = VertexBufferGPU2->GetGPUVirtualAddress();
+	//	vbv.StrideInBytes = VertexByteStride;
+	//	vbv.SizeInBytes = VertexBufferByteSize;
 
-		return vbv;
-	}
+	//	return vbv;
+	//}
 
 	D3D12_INDEX_BUFFER_VIEW IndexBufferView()const
 	{
@@ -229,7 +229,7 @@ struct MeshGeometry
 	void DisposeUploaders()
 	{
 		VertexBufferUploader = nullptr;
-		VertexBufferUploader2 = nullptr;
+		//VertexBufferUploader2 = nullptr;
 		IndexBufferUploader = nullptr;
 	}
 };

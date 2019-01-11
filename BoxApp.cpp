@@ -47,7 +47,7 @@ private:
     void BuildBoxGeometry();
 	void BuildScene();
     void BuildPSO();
-
+	SubmeshGeometry sphereSubmesh;
 private:
     
     ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
@@ -213,13 +213,9 @@ void BoxApp::Draw(const GameTimer& gt)
     
     mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
 
-    mCommandList->DrawIndexedInstanced(
-		mBoxGeo->DrawArgs["grid"].IndexCount, 
-		1, 0, 0, 0);
+    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["grid"].IndexCount, 1, 0, 0, 0);
 
-	mCommandList->DrawIndexedInstanced(
-		mBoxGeo->DrawArgs["sphere"].IndexCount,
-		1, 0, 0, 0);
+	mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["sphere"].IndexCount, 1, sphereSubmesh.StartIndexLocation, sphereSubmesh.BaseVertexLocation, 0);
 	
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -360,8 +356,10 @@ void BoxApp::BuildShadersAndInputLayout()
 
     mInputLayout =
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+        
+       
     };
 
 }
@@ -478,17 +476,17 @@ void BoxApp::BuildScene()
 	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
 
 	UINT gridVertexOffset = 0;
-	UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
+	UINT sphereVertexOffset =  (UINT)grid.Vertices.size();
 
 	UINT gridIndexOffset = 0;
-	UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
+	UINT sphereIndexOffset = (UINT)grid.Indices32.size();
 
 	SubmeshGeometry gridSubmesh;
 	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
 	gridSubmesh.StartIndexLocation = gridIndexOffset;
 	gridSubmesh.BaseVertexLocation = gridVertexOffset;
 
-	SubmeshGeometry sphereSubmesh;
+
 	sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
 	sphereSubmesh.StartIndexLocation = sphereIndexOffset;
 	sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
@@ -502,7 +500,7 @@ void BoxApp::BuildScene()
 	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = grid.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::Crimson);
+		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
 	}
 
 	for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
@@ -519,7 +517,7 @@ void BoxApp::BuildScene()
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-	auto geo = std::make_unique<MeshGeometry>();
+	//auto geo = std::make_unique<MeshGeometry>();
 	mBoxGeo = std::make_unique<MeshGeometry>();
 	mBoxGeo->Name = "shapeGeo";
 
@@ -541,7 +539,7 @@ void BoxApp::BuildScene()
 	mBoxGeo->IndexBufferByteSize = ibByteSize;
 
 	mBoxGeo->DrawArgs["grid"] = gridSubmesh;
-	geo->DrawArgs["sphere"] = sphereSubmesh;
+	mBoxGeo->DrawArgs["sphere"] = sphereSubmesh;
 
 	//mBoxGeo = geo;
 }
