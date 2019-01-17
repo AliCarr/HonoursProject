@@ -1,81 +1,8 @@
-#include "Common/d3dApp.h"
-#include "Common/MathHelper.h"
-#include "Common/UploadBuffer.h"
-#include "Common/GeometryGenerator.h"
-using Microsoft::WRL::ComPtr;
-using namespace DirectX;
-using namespace DirectX::PackedVector;
-
-struct Vertex
-{
-	DirectX::XMFLOAT3 Pos;
-	DirectX::XMFLOAT4 Color;
-};
-
-
-
-struct ObjectConstants
-{
-    XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
-	XMFLOAT4 pulseColour;
-	float time;
-};
-
-class BoxApp : public D3DApp
-{
-public:
-	BoxApp(HINSTANCE hInstance);
-    BoxApp(const BoxApp& rhs) = delete;
-    BoxApp& operator=(const BoxApp& rhs) = delete;
-	~BoxApp();
-
-	virtual bool Initialize()override;
-
-private:
-    virtual void OnResize()override;
-    virtual void Update(const GameTimer& gt)override;
-    virtual void Draw(const GameTimer& gt)override;
-
-    virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
-    virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
-    virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
-
-    void BuildDescriptorHeaps();
-	void BuildConstantBuffers();
-    void BuildRootSignature();
-    void BuildShadersAndInputLayout();
-    void BuildBoxGeometry();
-	void BuildScene();
-    void BuildPSO();
-	SubmeshGeometry sphereSubmesh;
-private:
-    
-    ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-    ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
-
-	float timer;
-
-    std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
-
-	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
-
-    ComPtr<ID3DBlob> mvsByteCode = nullptr;
-    ComPtr<ID3DBlob> mpsByteCode = nullptr;
-
-    std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
-
-    ComPtr<ID3D12PipelineState> mPSO = nullptr;
-
-    XMFLOAT4X4 mWorld = MathHelper::Identity4x4();
-    XMFLOAT4X4 mView = MathHelper::Identity4x4();
-    XMFLOAT4X4 mProj = MathHelper::Identity4x4();
-
-    float mTheta = 1.5f*XM_PI;
-    float mPhi = XM_PIDIV4;
-    float mRadius = 5.0f;
-
-    POINT mLastMousePos;
-};
+//#include "Common/d3dApp.h"
+//#include "Common/MathHelper.h"
+//#include "Common/UploadBuffer.h"
+//#include "Common/GeometryGenerator.h"
+#include "BoxApp.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 				   PSTR cmdLine, int showCmd)
@@ -121,8 +48,8 @@ bool BoxApp::Initialize()
 	BuildConstantBuffers();
     BuildRootSignature();
     BuildShadersAndInputLayout();
-    //BuildBoxGeometry();
-	BuildScene();
+	mScene = new Scene();
+	mScene->BuildScene(mBoxGeo, md3dDevice, mCommandList);
     BuildPSO();
 
 	timer = 0;
@@ -215,7 +142,7 @@ void BoxApp::Draw(const GameTimer& gt)
 
     mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["grid"].IndexCount, 1, 0, 0, 0);
 
-	mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["sphere"].IndexCount, 1, sphereSubmesh.StartIndexLocation, sphereSubmesh.BaseVertexLocation, 0);
+	mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["sphere"].IndexCount, 1, mScene->getSphereMesh().StartIndexLocation, mScene->getSphereMesh().BaseVertexLocation, 0);
 	
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -358,190 +285,8 @@ void BoxApp::BuildShadersAndInputLayout()
     {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-        
-       
     };
 
-}
-
-void BoxApp::BuildBoxGeometry()
-{
- ////   std::array<VPosData, 8> vertices =
- ////   {
-	////	VPosData({ XMFLOAT3(-1.0f, -1.0f, -1.0f)}),
-	////	VPosData({ XMFLOAT3(-1.0f, +1.0f, -1.0f)}),
-	////	VPosData({ XMFLOAT3(+1.0f, +1.0f, -1.0f)}),
-	////	VPosData({ XMFLOAT3(+1.0f, -1.0f, -1.0f)}),
-	////	VPosData({ XMFLOAT3(-1.0f, -1.0f, +1.0f)}),
-	////	VPosData({ XMFLOAT3(-1.0f, +1.0f, +1.0f)}),
-	////	VPosData({ XMFLOAT3(+1.0f, +1.0f, +1.0f)}),
-	////	VPosData({ XMFLOAT3(+1.0f, -1.0f, +1.0f)})
- ////   };
-
-	////std::array<VColourData, 8> colour =
-	////{
-	////	VColourData({ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)}),
-	////	VColourData({ XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)}),
-	////	VColourData({ XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)}),
-	////	VColourData({ XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)}),
-	////	VColourData({ XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)}),
-	////	VColourData({ XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)}),
-	////	VColourData({ XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)}),
-	////	VColourData({ XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)})
-	////};
-
-	//std::array<std::uint16_t, 36> indices =
-	//{
-	//	// front face
-	//	0, 1, 2,
-	//	0, 2, 3,
-
-	//	// back face
-	//	4, 6, 5,
-	//	4, 7, 6,
-
-	//	// left face
-	//	4, 5, 1,
-	//	4, 1, 0,
-
-	//	// right face
-	//	3, 2, 6,
-	//	3, 6, 7,
-
-	//	// top face
-	//	1, 5, 6,
-	//	1, 6, 2,
-
-	//	// bottom face
-	//	4, 0, 3,
-	//	4, 3, 7
-	//};
-
- //   /*const UINT vbByteSize = (UINT)vertices.size() * sizeof(VPosData);
-	//const UINT vbByteSize2 = (UINT)colour.size() * sizeof(VColourData);*/
-	//const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-	//mBoxGeo = std::make_unique<MeshGeometry>();
-	//mBoxGeo->Name = "boxGeo";
-
-	////Vertex buffer one
-	//ThrowIfFailed(D3DCreateBlob(vbByteSize, &mBoxGeo->VertexBufferCPU));
-	//CopyMemory(mBoxGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	////Vertex Buffer two
-	//ThrowIfFailed(D3DCreateBlob(vbByteSize2, &mBoxGeo->VertexBufferCPU2));
-	//CopyMemory(mBoxGeo->VertexBufferCPU2->GetBufferPointer(), colour.data(), vbByteSize2);
-
-	//ThrowIfFailed(D3DCreateBlob(ibByteSize, &mBoxGeo->IndexBufferCPU));
-	//CopyMemory(mBoxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	////Vertex buffer one
-	//mBoxGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-	//	mCommandList.Get(), vertices.data(), vbByteSize, mBoxGeo->VertexBufferUploader);
-
-	////Vertex buffer two
-	//mBoxGeo->VertexBufferGPU2 = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-	//	mCommandList.Get(), colour.data(), vbByteSize2, mBoxGeo->VertexBufferUploader2);
-
-
-	//mBoxGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-	//	mCommandList.Get(), indices.data(), ibByteSize, mBoxGeo->IndexBufferUploader);
-
-
-	////Vertex Buffer one
-	//mBoxGeo->VertexByteStride = sizeof(VPosData);
-	//mBoxGeo->VertexBufferByteSize = vbByteSize;
-
-	////vertex buffer two
-	//mBoxGeo->VertexByteStride2 = sizeof(VColourData);
-	//mBoxGeo->VertexBufferByteSize2 = vbByteSize2;
-
-
-
-	//mBoxGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	//mBoxGeo->IndexBufferByteSize = ibByteSize;
-
-	//SubmeshGeometry submesh;
-	//submesh.IndexCount = (UINT)indices.size();
-	//submesh.StartIndexLocation = 0;
-	//submesh.BaseVertexLocation = 0;
-
-	//mBoxGeo->DrawArgs["box"] = submesh;
-}
-
-void BoxApp::BuildScene()
-{
-	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData grid = geoGen.CreateGrid(20.0f, 30.0f, 60, 40);
-	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
-
-	UINT gridVertexOffset = 0;
-	UINT sphereVertexOffset =  (UINT)grid.Vertices.size();
-
-	UINT gridIndexOffset = 0;
-	UINT sphereIndexOffset = (UINT)grid.Indices32.size();
-
-	SubmeshGeometry gridSubmesh;
-	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
-	gridSubmesh.StartIndexLocation = gridIndexOffset;
-	gridSubmesh.BaseVertexLocation = gridVertexOffset;
-
-
-	sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
-	sphereSubmesh.StartIndexLocation = sphereIndexOffset;
-	sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
-
-	auto totalVertexCount = grid.Vertices.size() + sphere.Vertices.size();
-
-	std::vector<Vertex> vertices(totalVertexCount);
-
-	UINT k = 0;
-
-	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = grid.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
-	}
-
-	for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = sphere.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::Crimson);
-	}
-
-	std::vector<std::uint16_t> indices;
-
-	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
-	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-	//auto geo = std::make_unique<MeshGeometry>();
-	mBoxGeo = std::make_unique<MeshGeometry>();
-	mBoxGeo->Name = "shapeGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mBoxGeo->VertexBufferCPU));
-	CopyMemory(mBoxGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mBoxGeo->IndexBufferCPU));
-	CopyMemory(mBoxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	mBoxGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, mBoxGeo->VertexBufferUploader);
-
-	mBoxGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, mBoxGeo->IndexBufferUploader);
-
-	mBoxGeo->VertexByteStride = sizeof(Vertex);
-	mBoxGeo->VertexBufferByteSize = vbByteSize;
-	mBoxGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	mBoxGeo->IndexBufferByteSize = ibByteSize;
-
-	mBoxGeo->DrawArgs["grid"] = gridSubmesh;
-	mBoxGeo->DrawArgs["sphere"] = sphereSubmesh;
-
-	//mBoxGeo = geo;
 }
 
 void BoxApp::BuildPSO()
