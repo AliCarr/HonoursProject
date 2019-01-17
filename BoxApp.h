@@ -25,7 +25,6 @@ private:
 	void BuildConstantBuffers();
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
-	void BuildScene();
 	void BuildPSO();
 
 	Scene *mScene;

@@ -20,3 +20,8 @@ struct ObjectConstants
 	XMFLOAT4 pulseColour;
 	float time;
 };
+
+struct MaterialConstants
+{
+
+};
