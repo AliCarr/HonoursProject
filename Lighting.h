@@ -12,5 +12,6 @@ public:
 private:
 	void BuildMaterials();
 	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
+
 };
 
