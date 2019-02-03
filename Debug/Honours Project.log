@@ -1,14 +1,4 @@
-﻿  Camera.cpp
+﻿  App.cpp
   d3dApp.cpp
-  d3dUtil.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\common\d3dutil.cpp(30): warning C4244: 'argument': conversion from 'std::streamoff' to 'SIZE_T', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\common\d3dutil.cpp(70): warning C4244: '=': conversion from 'UINT64' to 'LONG_PTR', possible loss of data
-  DDSTextureLoader.cpp
-  GameTimer.cpp
-  GeometryGenerator.cpp
-  MathHelper.cpp
-  App.cpp
-  Lighting.cpp
-  Scene.cpp
   Generating Code...
-  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe
+  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\Debug\Honours Project.exe

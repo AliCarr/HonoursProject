@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "Scene.h"
+#include "Particle.h"
 
 class App : public D3DApp
 {
@@ -27,7 +28,7 @@ private:
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
 
-	Scene *mScene;
+	//Scene *mScene;
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
@@ -55,4 +56,6 @@ private:
 	float mRadius = 5.0f;
 
 	POINT mLastMousePos;
+
+	Particle* mParticle;
 };

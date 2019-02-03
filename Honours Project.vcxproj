@@ -150,6 +150,7 @@
     <ClCompile Include="Common\MathHelper.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Lighting.cpp" />
+    <ClCompile Include="Particle.cpp" />
     <ClCompile Include="Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +176,7 @@
     <ClInclude Include="Common\UploadBuffer.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="Lighting.h" />
+    <ClInclude Include="Particle.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
