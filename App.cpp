@@ -55,6 +55,24 @@ bool App::Initialize()
 	//mScene->BuildScene(mBoxGeo, md3dDevice, mCommandList);
     BuildPSO();
 
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string warn, err;
+	tinyobj::MaterialReader *fdsa;
+
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str(), TEXTURE_PATH.c_str(), true, true);
+
+
+	for (const auto& shape : shapes) {
+		for (const auto& index : shape.mesh.indices) {
+			Vertex vertex = {};
+
+			vertices.push_back(vertex);
+			indices.push_back(indices.size());
+		}
+	}
+
 	timer = 0;
     // Execute the initialization commands.
     ThrowIfFailed(mCommandList->Close());

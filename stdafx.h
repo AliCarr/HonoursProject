@@ -3,6 +3,7 @@
 #include "Common/MathHelper.h"
 #include "Common/UploadBuffer.h"
 #include "Common/GeometryGenerator.h"
+#include "tinyobjloader-master\tiny_obj_loader.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;

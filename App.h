@@ -58,8 +58,21 @@ private:
 	POINT mLastMousePos;
 
 	Particle* mParticle[2];
-
+	
 	float test = 0;
 
 	const int maxParticles = 10;
+
+
+	const int WIDTH = 800;
+	const int HEIGHT = 600;
+
+	const std::string MODEL_PATH = "Assets/chalet.obj";
+	const std::string TEXTURE_PATH = "Assets/chalet.jpg";
+	//stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
+	//VkBuffer vertexBuffer;
+	//VkDeviceMemory vertexBufferMemory;
 };
