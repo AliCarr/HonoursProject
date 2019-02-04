@@ -57,5 +57,9 @@ private:
 
 	POINT mLastMousePos;
 
-	Particle* mParticle;
+	Particle* mParticle[2];
+
+	float test = 0;
+
+	const int maxParticles = 10;
 };

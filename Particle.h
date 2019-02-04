@@ -5,15 +5,16 @@
 class Particle
 {
 public:
-	Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+	Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, float offset);
 	~Particle();
 
-
+	float update(XMMATRIX&, float);
 
 
 private:
-	const float height = 1.0f, width = 1.0f;
+	const float height = 1.f, width = 1.f;
 	XMFLOAT3 position;
+	float velocity;
 	float energy;
 	bool isActive;
 	//std::unique_ptr<MeshGeometry> geo = nullptr;

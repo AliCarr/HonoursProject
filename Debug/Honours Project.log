@@ -1,4 +1,5 @@
 ﻿  App.cpp
-  d3dApp.cpp
+  Particle.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\particle.cpp(20): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
   Generating Code...
-  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\Debug\Honours Project.exe
+  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

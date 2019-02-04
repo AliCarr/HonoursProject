@@ -10,6 +10,8 @@ struct VertexIn
 {
 	float4 colour  : COLOR;
 	float3 PosL  : POSITION;
+	float velocity : VELOCITY;
+	float active : ACTIVE;
 	
 };
 
@@ -30,6 +32,8 @@ VertexOut VS(VertexIn vin)
 
 	vout.PosH = mul(float4(vin.PosL, 1.0f), gWorldViewProj);
 
+	
+	vout.PosH.y -= gTime * vin.velocity;
 
 	
 	

@@ -1,11 +1,8 @@
 #include "Particle.h"
 
-
-
-Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
+Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, float offset)
 {
 	GeometryGenerator::MeshData grid = geoGen.CreateGrid(width, height, 60, 40);
-
 
 	gridVertexOffset = 0;
 	gridIndexOffset = 0;
@@ -20,10 +17,15 @@ Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPt
 
 	UINT k = 0;
 
+	float random = ((rand() % 20)/10) - 1;
+
 	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = grid.Vertices[i].Position;
+		vertices[k].Pos.x += offset;
 		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
+		vertices[k].Velocity = 1.f;
+		vertices[k].active = 1.0f;
 	}
 
 	std::vector<std::uint16_t> indices;
@@ -57,9 +59,23 @@ Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPt
 
 	meshGeo->DrawArgs["grid"] = gridSubmesh;
 
+
+
+	position.x = rand() % 1 - 0.5f;;
+	position.y = 1;
+	position.z = 0;
+
+	velocity = 0.001f;
 }
 
 
 Particle::~Particle()
 {
+}
+
+float Particle::update(XMMATRIX &world, float deltaTime)
+{
+	return position.y -= velocity * deltaTime;
+
+	
 }

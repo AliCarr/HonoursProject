@@ -49,7 +49,9 @@ bool App::Initialize()
     BuildRootSignature();
     BuildShadersAndInputLayout();
 	//mScene = new Scene();
-	mParticle = new Particle(mBoxGeo, md3dDevice, mCommandList);
+	
+	mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList, 0.5f);
+	mParticle[1] = new Particle(mBoxGeo, md3dDevice, mCommandList, -0.5f);
 	//mScene->BuildScene(mBoxGeo, md3dDevice, mCommandList);
     BuildPSO();
 
@@ -89,7 +91,11 @@ void App::Update(const GameTimer& gt)
     XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
     XMStoreFloat4x4(&mView, view);
 
-    XMMATRIX world = XMLoadFloat4x4(&mWorld);
+	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
+	
+	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
+
+    XMMATRIX world = XMMatrixMultiply(  XMLoadFloat4x4(&mWorld), rotation);
     XMMATRIX proj = XMLoadFloat4x4(&mProj);
     XMMATRIX worldViewProj = world*view*proj;
 
@@ -98,7 +104,9 @@ void App::Update(const GameTimer& gt)
     XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));;
 	//XMStoreFloat(&objConstants.time, );
 	timer += gt.DeltaTime();
-	objConstants.time = timer;
+	//for(int c = 0; c < maxParticles; c++)
+	objConstants.yPosiiton = timer;
+
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
     mObjectCB->CopyData(0, objConstants);
 }
@@ -284,8 +292,11 @@ void App::BuildShadersAndInputLayout()
 
     mInputLayout =
     {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,  0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "VELOCITY", 0, DXGI_FORMAT_R32_FLOAT,          0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "ACTIVE",   0, DXGI_FORMAT_R32_FLOAT,          0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+
     };
 
 }
