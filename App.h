@@ -1,4 +1,6 @@
 #pragma once
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tinyobjloader-master\tiny_obj_loader.h"
 #include "stdafx.h"
 #include "Scene.h"
 #include "Particle.h"
@@ -27,7 +29,7 @@ private:
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
-
+	void BuildModel();
 	//Scene *mScene;
 private:
 

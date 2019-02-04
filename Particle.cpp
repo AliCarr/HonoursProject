@@ -24,8 +24,6 @@ Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPt
 		vertices[k].Pos = grid.Vertices[i].Position;
 		vertices[k].Pos.x += offset;
 		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
-		vertices[k].Velocity = 1.f;
-		vertices[k].active = 1.0f;
 	}
 
 	std::vector<std::uint16_t> indices;

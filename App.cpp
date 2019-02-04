@@ -50,29 +50,15 @@ bool App::Initialize()
     BuildShadersAndInputLayout();
 	//mScene = new Scene();
 	
-	mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList, 0.5f);
-	mParticle[1] = new Particle(mBoxGeo, md3dDevice, mCommandList, -0.5f);
+	//mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList, 0.5f);
+	//mParticle[1] = new Particle(mBoxGeo, md3dDevice, mCommandList, -0.5f);
 	//mScene->BuildScene(mBoxGeo, md3dDevice, mCommandList);
+	BuildModel();
     BuildPSO();
 
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn, err;
-	tinyobj::MaterialReader *fdsa;
+	
 
-	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str(), TEXTURE_PATH.c_str(), true, true);
-
-
-	for (const auto& shape : shapes) {
-		for (const auto& index : shape.mesh.indices) {
-			Vertex vertex = {};
-
-			vertices.push_back(vertex);
-			indices.push_back(indices.size());
-		}
-	}
-
+	
 	timer = 0;
     // Execute the initialization commands.
     ThrowIfFailed(mCommandList->Close());
@@ -111,9 +97,9 @@ void App::Update(const GameTimer& gt)
 
 	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
 	
-	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
+//	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
 
-    XMMATRIX world = XMMatrixMultiply(  XMLoadFloat4x4(&mWorld), rotation);
+    XMMATRIX world =  XMLoadFloat4x4(&mWorld);
     XMMATRIX proj = XMLoadFloat4x4(&mProj);
     XMMATRIX worldViewProj = world*view*proj;
 
@@ -167,7 +153,7 @@ void App::Draw(const GameTimer& gt)
     
     mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
 
-    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["grid"].IndexCount, 1, 0, 0, 0);
+    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["box"].IndexCount, 1, mBoxGeo->DrawArgs["box"].StartIndexLocation, mBoxGeo->DrawArgs["box"].BaseVertexLocation, 0);
 
 	//mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["sphere"].IndexCount, 1, mParticle->getSphereMesh().StartIndexLocation, mScene->getSphereMesh().BaseVertexLocation, 0);
 	
@@ -310,11 +296,9 @@ void App::BuildShadersAndInputLayout()
 
     mInputLayout =
     {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,  0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "VELOCITY", 0, DXGI_FORMAT_R32_FLOAT,          0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "ACTIVE",   0, DXGI_FORMAT_R32_FLOAT,          0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-
+		{ "POSITION", 0,    DXGI_FORMAT_R32G32B32_FLOAT, 0,   0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
     };
 
 }
@@ -348,4 +332,86 @@ void App::BuildPSO()
     psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
     psoDesc.DSVFormat = mDepthStencilFormat;
     ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
+}
+
+void App::BuildModel()
+{
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string warn, err;
+	//tinyobj::MaterialReader *fdsa;
+
+	//ThrowIfFailed(tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str(), TEXTURE_PATH.c_str(), true, true));
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str());
+	for (const auto& shape : shapes) 
+	{
+		for (const auto& index : shape.mesh.indices)
+		{
+			Vertex vertex = {};
+
+			vertex.Pos = {
+				attrib.vertices[3* index.vertex_index + 0],
+				attrib.vertices[3* index.vertex_index + 1],
+				attrib.vertices[3* index.vertex_index + 2]
+			};
+			
+			vertex.texCoord = {
+				attrib.texcoords[2 * index.texcoord_index + 0],
+				attrib.texcoords[2 * index.texcoord_index + 1]
+			};
+
+			vertex.Color = { 1.0f, 1.0f, 1.0f , 1.0f };
+
+			vertices.push_back(vertex);
+			indices.push_back(indices.size());
+		}
+	}
+	
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+	//const UINT vbByteSize2 = (UINT)colour.size() * sizeof(VColourData);
+	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+
+	mBoxGeo = std::make_unique<MeshGeometry>();
+	mBoxGeo->Name = "boxGeo";
+
+	//Vertex buffer one
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mBoxGeo->VertexBufferCPU));
+	CopyMemory(mBoxGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mBoxGeo->IndexBufferCPU));
+	CopyMemory(mBoxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+	//Vertex buffer one
+	mBoxGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), vertices.data(), vbByteSize, mBoxGeo->VertexBufferUploader);
+
+
+	mBoxGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), indices.data(), ibByteSize, mBoxGeo->IndexBufferUploader);
+
+
+	//Vertex Buffer one
+	mBoxGeo->VertexByteStride = sizeof(vertices);
+	mBoxGeo->VertexBufferByteSize = vbByteSize;
+
+	/*
+	
+	    _In_  UINT InstanceCount,
+            _In_  UINT StartIndexLocation,
+            _In_  INT BaseVertexLocation,
+            _In_  UINT StartInstanceLocation)*/
+
+
+	mBoxGeo->IndexFormat = DXGI_FORMAT_R32_UINT;
+	mBoxGeo->IndexBufferByteSize = ibByteSize;
+
+	SubmeshGeometry submesh;
+	submesh.IndexCount = (UINT)indices.size();
+	submesh.StartIndexLocation = 0;
+	submesh.BaseVertexLocation = 0;
+
+	mBoxGeo->DrawArgs["box"] = submesh;
+
+
 }

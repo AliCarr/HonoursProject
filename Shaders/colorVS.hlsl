@@ -8,11 +8,9 @@ cbuffer cbPerObject : register(b0)
 
 struct VertexIn
 {
-	float4 colour  : COLOR;
 	float3 PosL  : POSITION;
-	float velocity : VELOCITY;
-	float active : ACTIVE;
-	
+	float2 tex: TEX;
+	float4 colour  : COLOR;
 };
 
 struct VertexOut
@@ -31,9 +29,6 @@ VertexOut VS(VertexIn vin)
 	vout.colour = vin.colour;
 
 	vout.PosH = mul(float4(vin.PosL, 1.0f), gWorldViewProj);
-
-	
-	vout.PosH.y -= gTime * vin.velocity;
 
 	
 	
