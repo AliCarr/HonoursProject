@@ -1,34 +1,52 @@
 #include "Particle.h"
 
-Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, float offset)
+Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
 {
-	GeometryGenerator::MeshData grid = geoGen.CreateGrid(width, height, 60, 40);
+	mesh = geoGen.CreateGrid(width, height, 60, 40);
 
 	gridVertexOffset = 0;
 	gridIndexOffset = 0;
 
-	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
+	CreateParticle(meshGeo, device, commandList);
+}
+
+
+Particle::~Particle()
+{
+}
+
+float Particle::update(XMMATRIX &world, float deltaTime)
+{
+	return position.y -= velocity * deltaTime;
+
+	
+}
+
+bool Particle::CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
+{
+
+	gridSubmesh.IndexCount = (UINT)mesh.Indices32.size();
 	gridSubmesh.StartIndexLocation = gridIndexOffset;
 	gridSubmesh.BaseVertexLocation = gridVertexOffset;
 
-	auto totalVertexCount = grid.Vertices.size();
+	auto totalVertexCount = mesh.Vertices.size();
 
 	std::vector<Vertex> vertices(totalVertexCount);
 
 	UINT k = 0;
 
-	float random = ((rand() % 20)/10) - 1;
+	float random = ((rand() % 20) / 10) - 1;
 
-	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
+	for (size_t i = 0; i < mesh.Vertices.size(); ++i, ++k)
 	{
-		vertices[k].Pos = grid.Vertices[i].Position;
-		vertices[k].Pos.x += offset;
+		vertices[k].Pos = mesh.Vertices[i].Position;
+		vertices[k].texCoord = XMFLOAT2(1, 1);
 		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
 	}
 
 	std::vector<std::uint16_t> indices;
 
-	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
+	indices.insert(indices.end(), std::begin(mesh.GetIndices16()), std::end(mesh.GetIndices16()));
 
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
@@ -59,21 +77,11 @@ Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPt
 
 
 
-	position.x = rand() % 1 - 0.5f;;
-	position.y = 1;
-	position.z = 0;
+	//position.x = rand() % 1 - 0.5f;;
+	//position.y = 1;
+	//position.z = 0;
 
-	velocity = 0.001f;
-}
+	//velocity = 0.001f;
 
-
-Particle::~Particle()
-{
-}
-
-float Particle::update(XMMATRIX &world, float deltaTime)
-{
-	return position.y -= velocity * deltaTime;
-
-	
+	return true;
 }

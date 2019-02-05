@@ -2,10 +2,19 @@
 
 #include "stdafx.h"
 
+struct ParticleInformation
+{
+	XMFLOAT3 position;
+	XMFLOAT3 colour;
+	float  velocity;
+	bool active;
+};
+
+
 class Particle
 {
 public:
-	Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, float offset);
+	Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 	~Particle();
 
 	float update(XMMATRIX&, float);
@@ -23,14 +32,11 @@ private:
 	GeometryGenerator geoGen;
 	UINT gridVertexOffset;
 	UINT gridIndexOffset;
-	/*
-	What do I want from teh particle class
-	- Energy (how long it will live)
-	- Position
-	- Height and width
-	- Is it Alive
-	
-	
-	*/
+
+	ParticleInformation mInfo;
+
+	bool CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+
+	GeometryGenerator::MeshData mesh;
 };
 

@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Scene.h"
 #include "Particle.h"
+#include "Controls.h"
 
 class App : public D3DApp
 {
@@ -77,4 +78,6 @@ private:
 	std::vector<uint32_t> indices;
 	//VkBuffer vertexBuffer;
 	//VkDeviceMemory vertexBufferMemory;
+
+	Controls *mControl;
 };

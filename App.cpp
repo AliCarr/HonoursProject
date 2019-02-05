@@ -1,7 +1,3 @@
-//#include "Common/d3dApp.h"
-//#include "Common/MathHelper.h"
-//#include "Common/UploadBuffer.h"
-//#include "Common/GeometryGenerator.h"
 #include "App.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -50,16 +46,9 @@ bool App::Initialize()
     BuildShadersAndInputLayout();
 	//mScene = new Scene();
 	
-	//mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList, 0.5f);
-	//mParticle[1] = new Particle(mBoxGeo, md3dDevice, mCommandList, -0.5f);
-	//mScene->BuildScene(mBoxGeo, md3dDevice, mCommandList);
-	BuildModel();
+	mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList);
+    //BuildModel();
     BuildPSO();
-
-	
-
-	
-	timer = 0;
     // Execute the initialization commands.
     ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -67,6 +56,9 @@ bool App::Initialize()
 
     // Wait until initialization is complete.
     FlushCommandQueue();
+
+	timer = 0;
+	mControl = new Controls();
 
 	return true;
 }
@@ -96,8 +88,8 @@ void App::Update(const GameTimer& gt)
     XMStoreFloat4x4(&mView, view);
 
 	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
-	XMMATRIX scale = XMMatrixScaling(0.01, 0.01, 0.01);
-//	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
+	XMMATRIX scale = XMMatrixScaling(01, 01, 1);
+    //XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
 
     XMMATRIX world = XMMatrixMultiply( XMLoadFloat4x4(&mWorld), scale);
     XMMATRIX proj = XMLoadFloat4x4(&mProj);
@@ -106,9 +98,7 @@ void App::Update(const GameTimer& gt)
 	// Update the constant buffer with the latest worldViewProj matrix.
 	ObjectConstants objConstants;
     XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));;
-	//XMStoreFloat(&objConstants.time, );
 	timer += gt.DeltaTime();
-	//for(int c = 0; c < maxParticles; c++)
 	objConstants.yPosiiton = timer;
 
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
@@ -145,18 +135,14 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
 	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
-	
-	//mCommandList->IASetVertexBuffers(1, 1, &mBoxGeo->VertexBufferView2());
 
 	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
     mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     
     mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
 
-    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["box"].IndexCount, 1, mBoxGeo->DrawArgs["box"].StartIndexLocation, mBoxGeo->DrawArgs["box"].BaseVertexLocation, 0);
+    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["grid"].IndexCount, 1, mBoxGeo->DrawArgs["grid"].StartIndexLocation, mBoxGeo->DrawArgs["grid"].BaseVertexLocation, 0);
 
-	//mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["sphere"].IndexCount, 1, mParticle->getSphereMesh().StartIndexLocation, mScene->getSphereMesh().BaseVertexLocation, 0);
-	
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -180,47 +166,17 @@ void App::Draw(const GameTimer& gt)
 
 void App::OnMouseDown(WPARAM btnState, int x, int y)
 {
-    mLastMousePos.x = x;
-    mLastMousePos.y = y;
-
-    SetCapture(mhMainWnd);
+	mControl->OnMouseDown(btnState, x, y, mhMainWnd);
 }
 
 void App::OnMouseUp(WPARAM btnState, int x, int y)
 {
-    ReleaseCapture();
+	mControl->OnMouseUp( btnState,  x,  y);
 }
 
 void App::OnMouseMove(WPARAM btnState, int x, int y)
 {
-    if((btnState & MK_LBUTTON) != 0)
-    {
-        // Make each pixel correspond to a quarter of a degree.
-        float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
-        float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
-
-        // Update angles based on input to orbit camera around box.
-        mTheta += dx;
-        mPhi += dy;
-
-        // Restrict the angle mPhi.
-        mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
-    }
-    else if((btnState & MK_RBUTTON) != 0)
-    {
-        // Make each pixel correspond to 0.005 unit in the scene.
-        float dx = 0.005f*static_cast<float>(x - mLastMousePos.x);
-        float dy = 0.005f*static_cast<float>(y - mLastMousePos.y);
-
-        // Update the camera radius based on input.
-        mRadius += dx - dy;
-
-        // Restrict the radius.
-        mRadius = MathHelper::Clamp(mRadius, 3.0f, 15.0f);
-    }
-
-    mLastMousePos.x = x;
-    mLastMousePos.y = y;
+	mControl->OnMouseMove(btnState, x, y, &mTheta, &mPhi, &mRadius);
 }
 
 void App::BuildDescriptorHeaps()

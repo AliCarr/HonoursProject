@@ -22,6 +22,18 @@
     <Filter Include="Resource Files\Shaders">
       <UniqueIdentifier>{c8cde6c2-aa3b-45bd-8086-598d5845c9c3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Tools">
+      <UniqueIdentifier>{3e568c50-db29-480a-977d-c8e3c9faf99e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Tools">
+      <UniqueIdentifier>{a25f4f6d-5c5a-4cd4-9ee9-6e80fe045029}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Particle System">
+      <UniqueIdentifier>{e6825ee5-f3f2-47ae-a7e1-c3839158c393}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Particle System">
+      <UniqueIdentifier>{466c7fab-4ae3-43f3-860d-5b068fc918c4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\MathHelper.cpp">
@@ -54,8 +66,14 @@
     <ClCompile Include="App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Controls.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
     <ClCompile Include="Particle.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Particle System</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleManager.cpp">
+      <Filter>Source Files\Particle System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -98,8 +116,14 @@
     <ClInclude Include="App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Controls.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
     <ClInclude Include="Particle.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Particle System</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleManager.h">
+      <Filter>Header Files\Particle System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
