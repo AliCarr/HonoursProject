@@ -69,7 +69,7 @@ private:
 	const int WIDTH = 800;
 	const int HEIGHT = 600;
 
-	const std::string MODEL_PATH = "Assets/chalet.obj";
+	const std::string MODEL_PATH = "Assets/Mount Wario.obj";
 	const std::string TEXTURE_PATH = "Assets/chalet.jpg";
 	//stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	

@@ -1,2 +1,3 @@
 ﻿  App.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\app.cpp(99): warning C4305: 'argument': truncation from 'double' to 'float'
   Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

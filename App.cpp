@@ -96,10 +96,10 @@ void App::Update(const GameTimer& gt)
     XMStoreFloat4x4(&mView, view);
 
 	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
-	
+	XMMATRIX scale = XMMatrixScaling(0.01, 0.01, 0.01);
 //	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
 
-    XMMATRIX world =  XMLoadFloat4x4(&mWorld);
+    XMMATRIX world = XMMatrixMultiply( XMLoadFloat4x4(&mWorld), scale);
     XMMATRIX proj = XMLoadFloat4x4(&mProj);
     XMMATRIX worldViewProj = world*view*proj;
 
@@ -389,7 +389,6 @@ void App::BuildModel()
 
 	mBoxGeo->VertexByteStride = sizeof(Vertex);
 	mBoxGeo->VertexBufferByteSize = vbByteSize;
-
 
 	mBoxGeo->IndexFormat = DXGI_FORMAT_R32_UINT;
 	mBoxGeo->IndexBufferByteSize = ibByteSize;
