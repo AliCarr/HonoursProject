@@ -1,3 +1,3 @@
 ﻿  Particle.cpp
-c:\users\alastair ross\documents\github\honoursproject\particle.cpp(38): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
-  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\Debug\Honours Project.exe
+\\stuhome\homedrive2$\1401292\github\honoursproject\particle.cpp(44): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

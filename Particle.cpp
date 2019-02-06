@@ -6,8 +6,11 @@ Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPt
 
 	gridVertexOffset = 0;
 	gridIndexOffset = 0;
-
+	position.y = 0;
+	position = { 0, 0, 0 };
 	CreateParticle(meshGeo, device, commandList);
+
+	isActive = true;
 }
 
 
@@ -15,11 +18,14 @@ Particle::~Particle()
 {
 }
 
-float Particle::update(XMMATRIX &world, float deltaTime)
+XMFLOAT3 Particle::update(XMMATRIX &world, float deltaTime)
 {
-	return position.y -= velocity * deltaTime;
+	position.y -= velocity * deltaTime;
 
-	
+	if (position.y <= -4)
+		isActive = false;
+
+	return position;
 }
 
 bool Particle::CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
@@ -74,14 +80,6 @@ bool Particle::CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft:
 	meshGeo->IndexBufferByteSize = ibByteSize;
 
 	meshGeo->DrawArgs["grid"] = gridSubmesh;
-
-
-
-	//position.x = rand() % 1 - 0.5f;;
-	//position.y = 1;
-	//position.z = 0;
-
-	//velocity = 0.001f;
 
 	return true;
 }

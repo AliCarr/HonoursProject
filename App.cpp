@@ -46,7 +46,8 @@ bool App::Initialize()
     BuildShadersAndInputLayout();
 	//mScene = new Scene();
 	
-	mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList);
+	//mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList);
+	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
     //BuildModel();
     BuildPSO();
     // Execute the initialization commands.
@@ -91,7 +92,8 @@ void App::Update(const GameTimer& gt)
 	XMMATRIX scale = XMMatrixScaling(01, 01, 1);
     //XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
 
-    XMMATRIX world = XMMatrixMultiply( XMLoadFloat4x4(&mWorld), scale);
+    XMMATRIX world = XMLoadFloat4x4(&mWorld);
+	pManager->Update(world, gt.DeltaTime());
     XMMATRIX proj = XMLoadFloat4x4(&mProj);
     XMMATRIX worldViewProj = world*view*proj;
 

@@ -2,41 +2,37 @@
 
 #include "stdafx.h"
 
-struct ParticleInformation
-{
-	XMFLOAT3 position;
-	XMFLOAT3 colour;
-	float  velocity;
-	bool active;
-};
-
-
 class Particle
 {
 public:
 	Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 	~Particle();
 
-	float update(XMMATRIX&, float);
+	//Functions
+	XMFLOAT3 update(XMMATRIX&, float);
+	bool IsActive(){ return isActive; };
 
 
 private:
-	const float height = 1.f, width = 1.f;
+	//Fixed Values
+	const float height = 0.01f, width = 0.01f, velocity = 0.5f;
+
+	//Particle Information
 	XMFLOAT3 position;
-	float velocity;
+	XMFLOAT3 colour;
+	//float velocity;
 	float energy;
 	bool isActive;
-	//std::unique_ptr<MeshGeometry> geo = nullptr;
-	SubmeshGeometry gridSubmesh;
 
+	//D3D12 Variables
+	SubmeshGeometry gridSubmesh;
 	GeometryGenerator geoGen;
 	UINT gridVertexOffset;
 	UINT gridIndexOffset;
+	GeometryGenerator::MeshData mesh;
 
-	ParticleInformation mInfo;
-
+	//Functions
 	bool CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 
-	GeometryGenerator::MeshData mesh;
 };
 
