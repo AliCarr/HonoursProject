@@ -75,36 +75,39 @@ void App::OnResize()
 
 void App::Update(const GameTimer& gt)
 {
-    // Convert Spherical to Cartesian coordinates.
-    float x = mRadius*sinf(mPhi)*cosf(mTheta);
-    float z = mRadius*sinf(mPhi)*sinf(mTheta);
-    float y = mRadius*cosf(mPhi);
+	// Convert Spherical to Cartesian coordinates.
+	float x = mRadius * sinf(mPhi)*cosf(mTheta);
+	float z = mRadius * sinf(mPhi)*sinf(mTheta);
+	float y = mRadius * cosf(mPhi);
 
-    // Build the view matrix.
-    XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
-    XMVECTOR target = XMVectorZero();
-    XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	// Build the view matrix.
+	XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
+	XMVECTOR target = XMVectorZero();
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
-    XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
-    XMStoreFloat4x4(&mView, view);
+	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
+	XMStoreFloat4x4(&mView, view);
 
 	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
-	XMMATRIX scale = XMMatrixScaling(01, 01, 1);
-    //XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
+	XMMATRIX scale = XMMatrixScaling(10, 10, 10);
+	//XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
 
-    XMMATRIX world = XMLoadFloat4x4(&mWorld);
+	XMMATRIX world = XMLoadFloat4x4(&mWorld);
 	pManager->Update(world, gt.DeltaTime());
-    XMMATRIX proj = XMLoadFloat4x4(&mProj);
-    XMMATRIX worldViewProj = world*view*proj;
+	XMMATRIX proj = XMLoadFloat4x4(&mProj);
+	XMMATRIX worldViewProj = world * view*proj;
 
 	// Update the constant buffer with the latest worldViewProj matrix.
 	ObjectConstants objConstants;
-    XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));;
-	timer += gt.DeltaTime();
-	objConstants.yPosiiton = timer;
+	pManager->UpdateCBuffers(mObjectCB);
+   
+	//timer += gt.DeltaTime();
+	//objConstants.yPosiiton = timer;
+
+
 
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
-    mObjectCB->CopyData(0, objConstants);
+ //   mObjectCB->CopyData(0, objConstants);
 }
 
 void App::Draw(const GameTimer& gt)
@@ -136,7 +139,7 @@ void App::Draw(const GameTimer& gt)
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
+	/*mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
 
 	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
     mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -144,7 +147,9 @@ void App::Draw(const GameTimer& gt)
     mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
 
     mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["grid"].IndexCount, 1, mBoxGeo->DrawArgs["grid"].StartIndexLocation, mBoxGeo->DrawArgs["grid"].BaseVertexLocation, 0);
+*/
 
+	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize);
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -184,7 +189,7 @@ void App::OnMouseMove(WPARAM btnState, int x, int y)
 void App::BuildDescriptorHeaps()
 {
     D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
-    cbvHeapDesc.NumDescriptors = 1;
+    cbvHeapDesc.NumDescriptors = 11;
     cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	cbvHeapDesc.NodeMask = 0;
