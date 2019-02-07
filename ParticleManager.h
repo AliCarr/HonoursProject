@@ -20,8 +20,9 @@ public:
 
 private:
 
-	const int numberOfParticles = 2;
+	const int numberOfParticles = 10;
 	
-	Particle* mParticle[];
+	//Particle* mParticle[];
+	std::vector<Particle*> mParticles;
 };
 

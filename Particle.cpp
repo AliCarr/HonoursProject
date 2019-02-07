@@ -6,8 +6,8 @@ Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPt
 
 	gridVertexOffset = 0;
 	gridIndexOffset = 0;
-	position.y = 0;
-	position = { 0, 0, 0 };
+	position.y = 1;
+	position = {((float)(rand() % 50) / 40.0f), 1.0f, ((float)(rand() % 50) / 40.0f) };
 	CreateParticle(meshGeo, device, commandList);
 
 	isActive = true;
@@ -23,8 +23,11 @@ XMFLOAT3 Particle::update(XMMATRIX &world, float deltaTime)
 	position.y -= velocity * deltaTime;
 
 	if (position.y <= -4)
+	{
+		//For now just have it return to start. Better handling can be added later
+		position.y = 1;
 		isActive = false;
-
+	}
 	return position;
 }
 
