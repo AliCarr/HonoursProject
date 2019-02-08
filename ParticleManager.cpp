@@ -47,7 +47,7 @@ void ParticleManager::Update(XMMATRIX& mat, float time)
 		mParticles.at(c)->update(time);
 	}
 
-	mat = mParticles.at(0)->World;
+	//mat = mParticles.at(0)->World;
 }
 
 void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size)
@@ -70,9 +70,9 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-		UINT cbvIndex =  (UINT)mParticles.size() * mParticles.at(c)->ObjCBIndex;
+	/*	UINT cbvIndex =  (UINT)mParticles.size() * mParticles.at(c)->ObjCBIndex;
 		auto cbvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heap->GetCPUDescriptorHandleForHeapStart());
-		cbvHandle.Offset(cbvIndex, size);
+		cbvHandle.Offset(cbvIndex, size);*/
 
 		commandList->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
 

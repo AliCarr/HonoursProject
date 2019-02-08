@@ -85,6 +85,6 @@ bool Particle::CreateParticle( Microsoft::WRL::ComPtr<ID3D12Device> &device, Mic
 	Geo->IndexBufferByteSize = ibByteSize;
 
 	Geo->DrawArgs["particle"] = gridSubmesh;
-
+	
 	return true;
 }

@@ -22,7 +22,7 @@ public:
 	UINT ObjCBIndex = -1;
 private:
 	//Fixed Values
-	const float height = 0.1f, width = 0.1f, velocity = 0.5f + ((rand()%50)/40);
+	const float height = 0.6f, width = 0.6f, velocity = 0.5f + ((rand()%50)/40);
 
 	//Particle Information
 	XMFLOAT3 position;

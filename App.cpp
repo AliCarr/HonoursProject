@@ -48,7 +48,7 @@ bool App::Initialize()
 	
 	//mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList);
 	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
-    //BuildModel();
+    BuildModel();
     BuildPSO();
     // Execute the initialization commands.
     ThrowIfFailed(mCommandList->Close());
@@ -90,24 +90,29 @@ void App::Update(const GameTimer& gt)
 
 	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
 	XMMATRIX scale = XMMatrixScaling(10, 10, 10);
-	//XMMATRIX rotation = XMMatrixRotationRollPitchYaw(1, 0, 0);
+	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(0, 0, 10);
 
 	XMMATRIX world = XMLoadFloat4x4(&mWorld);
-	pManager->Update(world, gt.DeltaTime());
+//	pManager->Update(world, gt.DeltaTime());
+	//world = XMMatrixMultiply(world, rotation);
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
-	XMMATRIX worldViewProj = world * view*proj;
+	XMMATRIX worldViewProj = world * view * proj;
 
 	// Update the constant buffer with the latest worldViewProj matrix.
 	ObjectConstants objConstants;
-	pManager->UpdateCBuffers(mObjectCB);
+	//pManager->UpdateCBuffers(mObjectCB);
    
-	//timer += gt.DeltaTime();
-	//objConstants.yPosiiton = timer;
+
+
+	XMStoreFloat4x4(&objConstants.WorldViewProj , XMMatrixTranspose( worldViewProj));
+	timer += gt.DeltaTime();
+
+	objConstants.yPosiiton = timer;
 
 
 
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
- //   mObjectCB->CopyData(0, objConstants);
+    mObjectCB->CopyData(0, objConstants);
 }
 
 void App::Draw(const GameTimer& gt)
@@ -139,17 +144,17 @@ void App::Draw(const GameTimer& gt)
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	/*mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
+	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
 
 	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
     mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     
     mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
 
-    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["grid"].IndexCount, 1, mBoxGeo->DrawArgs["grid"].StartIndexLocation, mBoxGeo->DrawArgs["grid"].BaseVertexLocation, 0);
-*/
+    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["box"].IndexCount, 1, mBoxGeo->DrawArgs["box"].StartIndexLocation, mBoxGeo->DrawArgs["box"].BaseVertexLocation, 0);
 
-	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize);
+
+	//pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize);
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
