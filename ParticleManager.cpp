@@ -50,7 +50,7 @@ void ParticleManager::Update(XMMATRIX& mat, float time)
 	//mat = mParticles.at(0)->World;
 }
 
-void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size)
+void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device)
 {
 	//0.0 Pass in command list 
 	//1.0 Start loop
@@ -64,6 +64,8 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 
 	for (int c = 0; c < numberOfParticles; c++)
 	{
+		mParticles.at(c)->updateGeo(device, commandList);
+
 		commandList->IASetVertexBuffers(0, 1, &mParticles.at(c)->Geo->VertexBufferView());
 
 		commandList->IASetIndexBuffer(&mParticles.at(c)->Geo->IndexBufferView());
@@ -89,8 +91,6 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 
 void ParticleManager::UpdateCBuffers(std::unique_ptr<UploadBuffer<ObjectConstants>> &mObjectCB)
 {
-	
-
 	for(int c = 0; c < numberOfParticles; c++)
 	{
 		ObjectConstants objCons;
@@ -98,8 +98,6 @@ void ParticleManager::UpdateCBuffers(std::unique_ptr<UploadBuffer<ObjectConstant
 
 		mObjectCB->CopyData(mParticles.at(c)->ObjCBIndex, objCons);
 	}
-
-	
 }
 
 

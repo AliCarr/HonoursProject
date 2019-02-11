@@ -30,6 +30,8 @@ XMFLOAT3 Particle::update( float deltaTime)
 	}
 
 	World = XMMatrixTranslation(position.x, position.y, position.z);
+
+
 	return position;
 }
 
@@ -87,4 +89,27 @@ bool Particle::CreateParticle( Microsoft::WRL::ComPtr<ID3D12Device> &device, Mic
 	Geo->DrawArgs["particle"] = gridSubmesh;
 	
 	return true;
+}
+
+void Particle::updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
+{
+	auto totalVertexCount = mesh.Vertices.size();
+
+	std::vector<Vertex> vertices(totalVertexCount);
+
+	UINT k = 0;
+
+	for (size_t i = 0; i < mesh.Vertices.size(); ++i, ++k)
+	{
+		/*vertices[k].Pos.x = mesh.Vertices[i].Position.x + position.x  ;
+		vertices[k].Pos.y = mesh.Vertices[i].Position.y + position.y  ;
+		vertices[k].Pos.z = mesh.Vertices[i].Position.z + position.z  ;*/
+		vertices[k].Pos = position;
+		vertices[k].texCoord = XMFLOAT2(1, 1);
+		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
+	}
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+
+	Geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+		commandList.Get(), vertices.data(), vbByteSize, Geo->VertexBufferUploader);
 }
