@@ -21,7 +21,7 @@ public:
 
 private:
 
-	const int numberOfParticles = 1;
+	const int numberOfParticles = 30;
 	
 	//Particle* mParticle[];
 	std::vector<Particle*> mParticles;

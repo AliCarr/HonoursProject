@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include <random>
 
 class Particle
 {
@@ -12,7 +13,7 @@ public:
 	XMFLOAT3 update(float);
 	bool IsActive(){ return isActive; };
 	XMMATRIX World;
-	MeshGeometry *Geo;
+	//MeshGeometry *Geo;
 	D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	UINT IndexCount = 0;
@@ -20,10 +21,10 @@ public:
 	int BaseVertexLocation = 0;
 
 	UINT ObjCBIndex = -1;
-	void updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+	void updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, std::unique_ptr<MeshGeometry> &meshGeo);
 private:
 	//Fixed Values
-	const float height = 0.6f, width = 0.6f, velocity = 0.5f + ((rand()%50)/40);
+	const float height = 0.01f, width = 0.01f, velocity = 0.5f + (float)((rand() % 500) / 450);
 
 	//Particle Information
 	XMFLOAT3 position;
@@ -32,7 +33,7 @@ private:
 	float energy;
 	bool isActive;
 	
-
+	std::random_device rd;
 	
 	//D3D12 Variables
 	SubmeshGeometry gridSubmesh;
@@ -42,7 +43,7 @@ private:
 	GeometryGenerator::MeshData mesh;
 
 	//Functions
-	bool CreateParticle( Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+	bool CreateParticle( Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, std::unique_ptr<MeshGeometry> &meshGeo);
 
 	
 };
