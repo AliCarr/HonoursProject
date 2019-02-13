@@ -1,8 +1,11 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 ﻿  ParticleManager.cpp
 \\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(22): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
 =======
+=======
+>>>>>>> parent of 8d743fa... Multiple Particles
 =======
 >>>>>>> parent of 8d743fa... Multiple Particles
 ﻿  Particle.cpp

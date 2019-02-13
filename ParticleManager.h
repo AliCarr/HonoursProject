@@ -41,8 +41,7 @@ public:
 	void UpdateGeometry(MeshGeometry&);
 
 private:
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData meshs;
 	const int numberOfParticles = 30;
@@ -54,14 +53,9 @@ private:
 	UINT gridVertexOffset;
 	UINT gridIndexOffset;
 	GeometryGenerator::MeshData meshing;
-=======
 
 	const int numberOfParticles = 1;
->>>>>>> parent of 8d743fa... Multiple Particles
-=======
 
-	const int numberOfParticles = 1;
->>>>>>> parent of 8d743fa... Multiple Particles
 	
 	//Particle* mParticle[];
 	std::vector<std::unique_ptr<ParticleItems>> mParticles;
