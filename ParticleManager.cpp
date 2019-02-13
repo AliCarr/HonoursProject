@@ -76,6 +76,8 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, M
 		mParticles.push_back(std::move(par));
 	}
 
+	float test = 0;
+	test += 2;
 }
 
 
