@@ -26,7 +26,6 @@ public:
 	int BaseVertexLocation = 0;
 
 	UINT ObjCBIndex = -1;
-	void updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 private:
 	//Fixed Values
 	const float height = 0.6f, width = 0.6f, velocity = 0.5f + ((rand()%50)/40);
@@ -50,6 +49,5 @@ private:
 	//Functions
 	bool CreateParticle( Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 
-	
 };
 

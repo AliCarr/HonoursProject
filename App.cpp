@@ -48,7 +48,7 @@ bool App::Initialize()
 	
 	//mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList);
 	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
-  //  BuildModel();
+    BuildModel();
     BuildPSO();
     // Execute the initialization commands.
     ThrowIfFailed(mCommandList->Close());
@@ -93,8 +93,7 @@ void App::Update(const GameTimer& gt)
 	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(0, 0, 10);
 
 	XMMATRIX world = XMLoadFloat4x4(&mWorld);
-	pManager->Update(world, gt.DeltaTime());
-
+//	pManager->Update(world, gt.DeltaTime());
 	//world = XMMatrixMultiply(world, rotation);
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
 	XMMATRIX worldViewProj = world * view * proj;
@@ -145,17 +144,21 @@ void App::Draw(const GameTimer& gt)
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	/*mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
+	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
 
 	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
     mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     
     mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
 
-    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["particle"].IndexCount, 1, mBoxGeo->DrawArgs["particle"].StartIndexLocation, mBoxGeo->DrawArgs["particle"].BaseVertexLocation, 0);*/
+    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["box"].IndexCount, 1, mBoxGeo->DrawArgs["box"].StartIndexLocation, mBoxGeo->DrawArgs["box"].BaseVertexLocation, 0);
 
 
+<<<<<<< HEAD
 	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice, mBoxGeo);
+=======
+	//pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize);
+>>>>>>> parent of 5b3725a... Switch in render item
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));

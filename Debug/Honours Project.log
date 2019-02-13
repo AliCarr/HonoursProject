@@ -2,6 +2,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 ﻿  ParticleManager.cpp
 \\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(22): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
 =======
@@ -17,4 +18,7 @@
 \\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(12): warning C4316: 'Particle': object allocated on the heap may not be aligned 16
   Generating Code...
 >>>>>>> parent of 8d743fa... Multiple Particles
+=======
+﻿  App.cpp
+>>>>>>> parent of 5b3725a... Switch in render item
   Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

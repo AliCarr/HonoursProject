@@ -32,7 +32,11 @@ public:
 	~ParticleManager();
 
 	void Update(XMMATRIX&, float);
+<<<<<<< HEAD
 	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device, std::unique_ptr<MeshGeometry>& mesh);
+=======
+	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap>&, UINT );
+>>>>>>> parent of 5b3725a... Switch in render item
 	void UpdateCBuffers(std::unique_ptr<UploadBuffer<ObjectConstants>> &);
 	std::unique_ptr<MeshGeometry> mGeo = nullptr;
 	MeshGeometry GetMeshGeo() { return *mGeo; };

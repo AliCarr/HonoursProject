@@ -105,7 +105,11 @@ void ParticleManager::Update(XMMATRIX& mat, float time)
 	//mat = mParticles.at(0)->World;
 }
 
+<<<<<<< HEAD
 void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device, std::unique_ptr<MeshGeometry>& mesh)
+=======
+void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size)
+>>>>>>> parent of 5b3725a... Switch in render item
 {
 	//0.0 Pass in command list 
 	//1.0 Start loop
@@ -119,6 +123,7 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 
 	for (int c = 0; c < numberOfParticles; c++)
 	{
+<<<<<<< HEAD
 
 		//Update the psitions.
 		auto totalVertexCount = meshing.Vertices.size();
@@ -151,6 +156,8 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 
 
 		////RENDERING STARTS HERE
+=======
+>>>>>>> parent of 5b3725a... Switch in render item
 		commandList->IASetVertexBuffers(0, 1, &mParticles.at(c)->Geo->VertexBufferView());
 
 		commandList->IASetIndexBuffer(&mParticles.at(c)->Geo->IndexBufferView());
@@ -174,5 +181,22 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 
 }
 
+<<<<<<< HEAD
+=======
+void ParticleManager::UpdateCBuffers(std::unique_ptr<UploadBuffer<ObjectConstants>> &mObjectCB)
+{
+	
+
+	for(int c = 0; c < numberOfParticles; c++)
+	{
+		ObjectConstants objCons;
+		  XMStoreFloat4x4(&objCons.WorldViewProj, mParticles.at(c)->World);
+
+		mObjectCB->CopyData(mParticles.at(c)->ObjCBIndex, objCons);
+	}
+
+	
+}
+>>>>>>> parent of 5b3725a... Switch in render item
 
 
