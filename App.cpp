@@ -155,7 +155,7 @@ void App::Draw(const GameTimer& gt)
     mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["particle"].IndexCount, 1, mBoxGeo->DrawArgs["particle"].StartIndexLocation, mBoxGeo->DrawArgs["particle"].BaseVertexLocation, 0);*/
 
 
-	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
+	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice, mBoxGeo);
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));

@@ -13,7 +13,7 @@ public:
 	XMFLOAT3 update(float);
 	bool IsActive(){ return isActive; };
 	XMMATRIX World;
-	//MeshGeometry *Geo;
+	MeshGeometry *Geo ;
 	D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	UINT IndexCount = 0;
