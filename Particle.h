@@ -12,9 +12,13 @@ public:
 	XMFLOAT3 update(float);
 	bool IsActive(){ return isActive; };
 	XMMATRIX World;
+<<<<<<< HEAD
 
 	MeshGeometry *Geo ;
 
+=======
+	MeshGeometry *Geo;
+>>>>>>> parent of 8d743fa... Multiple Particles
 	D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	UINT IndexCount = 0;

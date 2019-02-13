@@ -42,6 +42,7 @@ public:
 
 private:
 
+<<<<<<< HEAD
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData meshs;
 	const int numberOfParticles = 30;
@@ -56,6 +57,9 @@ private:
 
 	const int numberOfParticles = 1;
 
+=======
+	const int numberOfParticles = 1;
+>>>>>>> parent of 8d743fa... Multiple Particles
 	
 	//Particle* mParticle[];
 	std::vector<std::unique_ptr<ParticleItems>> mParticles;
