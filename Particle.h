@@ -13,7 +13,11 @@ public:
 	bool IsActive(){ return isActive; };
 	XMMATRIX World;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	MeshGeometry *Geo ;
+=======
+	MeshGeometry *Geo;
+>>>>>>> parent of 8d743fa... Multiple Particles
 =======
 	MeshGeometry *Geo;
 >>>>>>> parent of 8d743fa... Multiple Particles
