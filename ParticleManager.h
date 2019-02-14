@@ -7,18 +7,22 @@
 class ParticleManager
 {
 public:
-	ParticleManager();
+	ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, std::unique_ptr<MeshGeometry>&);
 	~ParticleManager();
 
-	bool Update();
-	bool Render();
-
+	void Update(XMMATRIX&, float);
+	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device);
+	void UpdateCBuffers(std::unique_ptr<UploadBuffer<ObjectConstants>> &);
+	std::unique_ptr<MeshGeometry> mGeo = nullptr;
+	MeshGeometry GetMeshGeo() { return *mGeo; };
 	int GetIndexCount();
+
+	void UpdateGeometry(MeshGeometry&);
 
 private:
 
-	const int numberOfParticles = 2;
-	std::unique_ptr<MeshGeometry> mGeo = nullptr;
-	Particle* mParticle;
-};
+	const int numberOfParticles = 30;
 
+	//Particle* mParticle[];
+	std::vector<Particle*> mParticles;
+};

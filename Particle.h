@@ -2,41 +2,47 @@
 
 #include "stdafx.h"
 
-struct ParticleInformation
-{
-	XMFLOAT3 position;
-	XMFLOAT3 colour;
-	float  velocity;
-	bool active;
-};
-
-
 class Particle
 {
 public:
 	Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 	~Particle();
 
-	float update(XMMATRIX&, float);
+	//Functions
+	XMFLOAT3 update(float);
+	bool IsActive() { return isActive; };
+	XMMATRIX World;
+	MeshGeometry *Geo;
+	D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
+	UINT IndexCount = 0;
+	UINT StartIndexLocation = 0;
+	int BaseVertexLocation = 0;
 
+	UINT ObjCBIndex = -1;
+	void updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 private:
-	const float height = 1.f, width = 1.f;
+	//Fixed Values
+	const float height = 0.01f, width = 0.01f, velocity = 0.5f + ((rand() % 50) / 40);
+
+	//Particle Information
 	XMFLOAT3 position;
-	float velocity;
+	XMFLOAT3 colour;
+	//float velocity;
 	float energy;
 	bool isActive;
-	//std::unique_ptr<MeshGeometry> geo = nullptr;
-	SubmeshGeometry gridSubmesh;
 
+
+
+	//D3D12 Variables
+	SubmeshGeometry gridSubmesh;
 	GeometryGenerator geoGen;
 	UINT gridVertexOffset;
 	UINT gridIndexOffset;
-
-	ParticleInformation mInfo;
-
-	bool CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
-
 	GeometryGenerator::MeshData mesh;
-};
 
+	//Functions
+	bool CreateParticle(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+
+
+};

@@ -2,12 +2,15 @@
 
 Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
 {
-	mesh = geoGen.CreateGrid(width, height, 60, 40);
+	mesh = geoGen.CreateGrid(width, height, 4, 4);
 
 	gridVertexOffset = 0;
 	gridIndexOffset = 0;
-
-	CreateParticle(meshGeo, device, commandList);
+	position.y = 1;
+	position = { ((float)(rand() % 3)), 1.0f, ((float)(rand() % 50) / 40.0f) };
+	CreateParticle(device, commandList);
+	World = XMMatrixTranslation(position.x, position.y, position.z);
+	isActive = true;
 }
 
 
@@ -15,14 +18,24 @@ Particle::~Particle()
 {
 }
 
-float Particle::update(XMMATRIX &world, float deltaTime)
+XMFLOAT3 Particle::update(float deltaTime)
 {
-	return position.y -= velocity * deltaTime;
+	position.y -= velocity * deltaTime;
 
-	
+	if (position.y <= -4)
+	{
+		//For now just have it return to start. Better handling can be added later
+		position.y = 1;
+		isActive = false;
+	}
+
+	World = XMMatrixTranslation(position.x, position.y, position.z);
+
+
+	return position;
 }
 
-bool Particle::CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
+bool Particle::CreateParticle(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
 {
 
 	gridSubmesh.IndexCount = (UINT)mesh.Indices32.size();
@@ -53,35 +66,50 @@ bool Particle::CreateParticle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft:
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
 	//auto geo = std::make_unique<MeshGeometry>();
-	meshGeo = std::make_unique<MeshGeometry>();
-	meshGeo->Name = "shapeGeo";
+	Geo = new MeshGeometry();
+	Geo->Name = "shapeGeo";
 
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &meshGeo->VertexBufferCPU));
-	CopyMemory(meshGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &Geo->VertexBufferCPU));
+	CopyMemory(Geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &meshGeo->IndexBufferCPU));
-	CopyMemory(meshGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &Geo->IndexBufferCPU));
+	CopyMemory(Geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-	meshGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
-		commandList.Get(), vertices.data(), vbByteSize, meshGeo->VertexBufferUploader);
+	Geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+		commandList.Get(), vertices.data(), vbByteSize, Geo->VertexBufferUploader);
 
-	meshGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
-		commandList.Get(), indices.data(), ibByteSize, meshGeo->IndexBufferUploader);
+	Geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+		commandList.Get(), indices.data(), ibByteSize, Geo->IndexBufferUploader);
 
-	meshGeo->VertexByteStride = sizeof(Vertex);
-	meshGeo->VertexBufferByteSize = vbByteSize;
-	meshGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	meshGeo->IndexBufferByteSize = ibByteSize;
+	Geo->VertexByteStride = sizeof(Vertex);
+	Geo->VertexBufferByteSize = vbByteSize;
+	Geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+	Geo->IndexBufferByteSize = ibByteSize;
 
-	meshGeo->DrawArgs["grid"] = gridSubmesh;
-
-
-
-	//position.x = rand() % 1 - 0.5f;;
-	//position.y = 1;
-	//position.z = 0;
-
-	//velocity = 0.001f;
+	Geo->DrawArgs["particle"] = gridSubmesh;
 
 	return true;
+}
+
+void Particle::updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
+{
+	auto totalVertexCount = mesh.Vertices.size();
+
+	std::vector<Vertex> vertices(totalVertexCount);
+
+	UINT k = 0;
+
+	for (size_t i = 0; i < mesh.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos.x = mesh.Vertices[i].Position.x + position.x  ;
+		vertices[k].Pos.y = mesh.Vertices[i].Position.y + position.y  ;
+		vertices[k].Pos.z = mesh.Vertices[i].Position.z + position.z  ;
+		//vertices[k].Pos = position;
+		vertices[k].texCoord = XMFLOAT2(1, 1);
+		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
+	}
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+
+	Geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+		commandList.Get(), vertices.data(), vbByteSize, Geo->VertexBufferUploader);
 }

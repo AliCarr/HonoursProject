@@ -3,7 +3,7 @@
 #include "tinyobjloader-master\tiny_obj_loader.h"
 #include "stdafx.h"
 #include "Scene.h"
-#include "Particle.h"
+#include "ParticleManager.h"
 #include "Controls.h"
 
 class App : public D3DApp
@@ -41,7 +41,7 @@ private:
 
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 
-	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
+	//std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
@@ -59,9 +59,8 @@ private:
 	float mRadius = 5.0f;
 
 	POINT mLastMousePos;
-
-	Particle* mParticle[2];
-	
+	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
+	ParticleManager* pManager;
 	float test = 0;
 
 	const int maxParticles = 10;
