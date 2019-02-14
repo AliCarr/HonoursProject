@@ -75,6 +75,9 @@
     <ClCompile Include="ParticleManager.cpp">
       <Filter>Source Files\Particle System</Filter>
     </ClCompile>
+    <ClCompile Include="ModelLoader.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\Camera.h">
@@ -124,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="ParticleManager.h">
       <Filter>Header Files\Particle System</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelLoader.h">
+      <Filter>Header Files\Tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
