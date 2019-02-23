@@ -10,15 +10,9 @@ public:
 
 	//Functions
 	XMFLOAT3 update(float);
-	bool IsActive(){ return isActive; };
+	bool IsActive() { return isActive; };
 	XMMATRIX World;
-<<<<<<< HEAD
-
-	MeshGeometry *Geo ;
-
-=======
 	MeshGeometry *Geo;
->>>>>>> parent of 8d743fa... Multiple Particles
 	D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	UINT IndexCount = 0;
@@ -26,9 +20,10 @@ public:
 	int BaseVertexLocation = 0;
 
 	UINT ObjCBIndex = -1;
+	void updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 private:
 	//Fixed Values
-	const float height = 0.6f, width = 0.6f, velocity = 0.5f + ((rand()%50)/40);
+	const float height = 0.01f, width = 0.01f, velocity = 0.5f + ((rand() % 50) / 40);
 
 	//Particle Information
 	XMFLOAT3 position;
@@ -36,9 +31,9 @@ private:
 	//float velocity;
 	float energy;
 	bool isActive;
-	
 
-	
+
+
 	//D3D12 Variables
 	SubmeshGeometry gridSubmesh;
 	GeometryGenerator geoGen;
@@ -47,7 +42,7 @@ private:
 	GeometryGenerator::MeshData mesh;
 
 	//Functions
-	bool CreateParticle( Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+	bool CreateParticle(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+
 
 };
-
