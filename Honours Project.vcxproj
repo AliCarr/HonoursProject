@@ -152,6 +152,10 @@
     <ClCompile Include="Common\MathHelper.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Controls.cpp" />
+    <ClCompile Include="imgui-master\imgui.cpp" />
+    <ClCompile Include="imgui-master\imgui_demo.cpp" />
+    <ClCompile Include="imgui-master\imgui_draw.cpp" />
+    <ClCompile Include="imgui-master\imgui_widgets.cpp" />
     <ClCompile Include="Lighting.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Particle.cpp" />
@@ -181,6 +185,12 @@
     <ClInclude Include="Common\UploadBuffer.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="Controls.h" />
+    <ClInclude Include="imgui-master\imconfig.h" />
+    <ClInclude Include="imgui-master\imgui.h" />
+    <ClInclude Include="imgui-master\imgui_internal.h" />
+    <ClInclude Include="imgui-master\imstb_rectpack.h" />
+    <ClInclude Include="imgui-master\imstb_textedit.h" />
+    <ClInclude Include="imgui-master\imstb_truetype.h" />
     <ClInclude Include="Lighting.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="Particle.h" />

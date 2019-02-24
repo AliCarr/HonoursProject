@@ -1,2 +1,15 @@
-﻿  App.cpp
+﻿  ParticleManager.cpp
+c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(11): warning C4244: 'argument': conversion from 'float' to 'GeometryGenerator::uint32', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(24): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(84): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(96): warning C4305: '=': truncation from 'double' to 'float'
+c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(97): warning C4305: '=': truncation from 'double' to 'float'
+c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(98): warning C4305: '=': truncation from 'double' to 'float'
+c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\memory(2539): warning C4244: 'argument': conversion from 'unsigned __int64' to 'UINT', possible loss of data
+  c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(73): note: see reference to function template instantiation 'std::unique_ptr<UploadBuffer<Vertex>,std::default_delete<_Ty>> std::make_unique<UploadBuffer<Vertex>,T*,unsigned __int64&,bool,0>(T *&&,unsigned __int64 &,bool &&)' being compiled
+          with
+          [
+              _Ty=UploadBuffer<Vertex>,
+              T=ID3D12Device
+          ]
   Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\Debug\Honours Project.exe

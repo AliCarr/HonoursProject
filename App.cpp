@@ -44,18 +44,14 @@ bool App::Initialize()
 	BuildConstantBuffers();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
-	//mScene = new Scene();
-
-	//mParticle[0] = new Particle(mBoxGeo, md3dDevice, mCommandList);
+	
 	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
-	//  BuildModel();
 	BuildPSO();
-	// Execute the initialization commands.
+
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	// Wait until initialization is complete.
 	FlushCommandQueue();
 
 	timer = 0;
@@ -93,7 +89,7 @@ void App::Update(const GameTimer& gt)
 	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(0, 0, 10);
 
 	XMMATRIX world = XMLoadFloat4x4(&mWorld);
-	pManager->Update(world, gt.DeltaTime());
+	//pManager->Update(world, gt.DeltaTime());
 
 	//world = XMMatrixMultiply(world, rotation);
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
@@ -103,7 +99,7 @@ void App::Update(const GameTimer& gt)
 	ObjectConstants objConstants;
 	//pManager->UpdateCBuffers(mObjectCB);
 
-
+	pManager->Update(world, gt.DeltaTime(), mCommandList, md3dDevice);
 
 	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
 	timer += gt.DeltaTime();
@@ -144,12 +140,6 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-
-	/*mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
-	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
-	mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
-	mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["particle"].IndexCount, 1, mBoxGeo->DrawArgs["particle"].StartIndexLocation, mBoxGeo->DrawArgs["particle"].BaseVertexLocation, 0);*/
 
 
 	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
@@ -263,8 +253,8 @@ void App::BuildShadersAndInputLayout()
 	mInputLayout =
 	{
 		{ "POSITION", 0,    DXGI_FORMAT_R32G32B32_FLOAT, 0,   0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
 }
