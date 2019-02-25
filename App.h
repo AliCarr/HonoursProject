@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "ParticleManager.h"
 #include "Controls.h"
+#include "Common/Camera.h"
 
 class App : public D3DApp
 {
@@ -24,6 +25,7 @@ private:
 	virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
 	virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
 	virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
+	void OnKeyboardInput(const GameTimer& gt);
 
 	void BuildDescriptorHeaps();
 	void BuildConstantBuffers();
@@ -79,4 +81,5 @@ private:
 	//VkDeviceMemory vertexBufferMemory;
 
 	Controls *mControl;
+	Camera mCamera;
 };

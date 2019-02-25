@@ -106,7 +106,7 @@ void ParticleManager::Update(XMMATRIX& mat, float time, Microsoft::WRL::ComPtr<I
 	//	CopyMemory(mParticle[c]->geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), mParticle[c]->vbByteSize);
 		
 
-		mParticle[c]->geo->VertexBufferGPU = currVB->Resource();
+		//mParticle[c]->geo->VertexBufferGPU = currVB->Resource();
 		//const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 		//ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeo->VertexBufferCPU));
 		//CopyMemory(mGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);

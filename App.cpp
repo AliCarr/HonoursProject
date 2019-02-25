@@ -57,6 +57,8 @@ bool App::Initialize()
 	timer = 0;
 	mControl = new Controls();
 
+	mCamera.SetPosition(0.0f, 2.0f, -15.0f);
+
 	return true;
 }
 
@@ -67,10 +69,14 @@ void App::OnResize()
 	// The window resized, so update the aspect ratio and recompute the projection matrix.
 	XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
 	XMStoreFloat4x4(&mProj, P);
+
+	mCamera.SetLens(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
 }
 
 void App::Update(const GameTimer& gt)
 {
+	OnKeyboardInput(gt);
+
 	// Convert Spherical to Cartesian coordinates.
 	float x = mRadius * sinf(mPhi)*cosf(mTheta);
 	float z = mRadius * sinf(mPhi)*sinf(mTheta);
@@ -81,7 +87,8 @@ void App::Update(const GameTimer& gt)
 	XMVECTOR target = XMVectorZero();
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
-	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
+	XMMATRIX view = mCamera.GetView();
+	XMMATRIX proj = mCamera.GetProj();
 	XMStoreFloat4x4(&mView, view);
 
 	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
@@ -92,7 +99,7 @@ void App::Update(const GameTimer& gt)
 	//pManager->Update(world, gt.DeltaTime());
 
 	//world = XMMatrixMultiply(world, rotation);
-	XMMATRIX proj = XMLoadFloat4x4(&mProj);
+//	XMMATRIX proj = XMLoadFloat4x4(&mProj);
 	XMMATRIX worldViewProj = world * view * proj;
 
 	// Update the constant buffer with the latest worldViewProj matrix.
@@ -106,7 +113,7 @@ void App::Update(const GameTimer& gt)
 
 	objConstants.yPosiiton = timer;
 
-
+	
 
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
 	mObjectCB->CopyData(0, objConstants);
@@ -166,17 +173,51 @@ void App::Draw(const GameTimer& gt)
 
 void App::OnMouseDown(WPARAM btnState, int x, int y)
 {
-	mControl->OnMouseDown(btnState, x, y, mhMainWnd);
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
+
+	SetCapture(mhMainWnd);
 }
 
 void App::OnMouseUp(WPARAM btnState, int x, int y)
 {
-	mControl->OnMouseUp(btnState, x, y);
+	//mControl->OnMouseUp(btnState, x, y);
+	ReleaseCapture();
 }
 
 void App::OnMouseMove(WPARAM btnState, int x, int y)
 {
-	mControl->OnMouseMove(btnState, x, y, &mTheta, &mPhi, &mRadius);
+	if ((btnState & MK_LBUTTON) != 0)
+	{
+		// Make each pixel correspond to a quarter of a degree.
+		float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
+		float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
+
+		mCamera.Pitch(dy);
+		mCamera.RotateY(dx);
+	}
+
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
+}
+
+void App::OnKeyboardInput(const GameTimer& gt)
+{
+	const float dt = gt.DeltaTime();
+
+	if (GetAsyncKeyState('W') & 0x8000)
+		mCamera.Walk(10.0f*dt);
+
+	if (GetAsyncKeyState('S') & 0x8000)
+		mCamera.Walk(-10.0f*dt);
+
+	if (GetAsyncKeyState('A') & 0x8000)
+		mCamera.Strafe(-10.0f*dt);
+
+	if (GetAsyncKeyState('D') & 0x8000)
+		mCamera.Strafe(10.0f*dt);
+
+	mCamera.UpdateViewMatrix();
 }
 
 void App::BuildDescriptorHeaps()
