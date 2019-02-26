@@ -12,6 +12,8 @@
 #define CAMERA_H
 
 #include "d3dUtil.h"
+#include "MathHelper.h"
+#include "d3dApp.h"
 
 class Camera
 {
@@ -71,8 +73,16 @@ public:
 
 	// After modifying camera position/orientation, call to rebuild the view matrix.
 	void UpdateViewMatrix();
+	void Update();
+	void Resize(float);
 
+	DirectX::XMMATRIX GetWorld();
+	DirectX::XMMATRIX GetWorldViewProj() ;
+	DirectX::XMFLOAT4X4 mProj = MathHelper::Identity4x4();
 private:
+
+	float pi = 3.141592654f;
+	float piD4 = 0.785398163f;
 
 	// Camera coordinate system with coordinates relative to world space.
 	DirectX::XMFLOAT3 mPosition = { 0.0f, 0.0f, 0.0f };
@@ -92,7 +102,13 @@ private:
 
 	// Cache View/Proj matrices.
 	DirectX::XMFLOAT4X4 mView = MathHelper::Identity4x4();
-	DirectX::XMFLOAT4X4 mProj = MathHelper::Identity4x4();
+	
+	DirectX::XMFLOAT4X4 mWorld = MathHelper::Identity4x4();
+	DirectX::XMMATRIX worldViewProj;
+	DirectX::XMMATRIX world;
+	const float mTheta = 1.5f*pi;
+	const float mPhi = piD4;
+	const float mRadius = 5.0f;
 };
 
 #endif // CAMERA_H
