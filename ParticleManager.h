@@ -21,8 +21,15 @@ public:
 
 private:
 
-	const int numberOfParticles = 30;
+	const int numberOfParticles = 90;
 
 	//Particle* mParticle[];
 	std::vector<Particle*> mParticles;
+
+	SubmeshGeometry gridSubmesh;
+	GeometryGenerator geoGen;
+	UINT gridVertexOffset;
+	UINT gridIndexOffset;
+	//GeometryGenerator::MeshData mesh;
+	GeometryGenerator::MeshData baseMesh;
 };

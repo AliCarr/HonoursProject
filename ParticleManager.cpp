@@ -6,18 +6,69 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, M
 {
 	/*for(int c = 0; c < numberOfParticles; c++)
 	mParticle[c] = new Particle(mesh,device, commandList);*/
+	baseMesh = geoGen.CreateGrid(0.001f, 0.001f, 4, 4);
 
+	gridSubmesh.IndexCount = (UINT)baseMesh.Indices32.size();
+	gridSubmesh.StartIndexLocation = gridIndexOffset;
+	gridSubmesh.BaseVertexLocation = gridVertexOffset;
+
+	auto totalVertexCount = baseMesh.Vertices.size();
+
+	std::vector<Vertex> vertices(totalVertexCount);
+
+	UINT k = 0;
+
+	float random = ((rand() % 20) / 10) - 1;
+
+	for (size_t i = 0; i < baseMesh.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = baseMesh.Vertices[i].Position;
+		vertices[k].texCoord = XMFLOAT2(1, 1);
+		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
+	}
+
+	std::vector<std::uint16_t> indices;
+
+	indices.insert(indices.end(), std::begin(baseMesh.GetIndices16()), std::end(baseMesh.GetIndices16()));
+
+
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+
+	mGeo = std::make_unique<MeshGeometry>();
+	mGeo->Name = "shapeGeo";
+
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeo->VertexBufferCPU));
+	CopyMemory(mGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mGeo->IndexBufferCPU));
+	CopyMemory(mGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+	mGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+		commandList.Get(), vertices.data(), vbByteSize, mGeo->VertexBufferUploader);
+
+	mGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+		commandList.Get(), indices.data(), ibByteSize, mGeo->IndexBufferUploader);
+
+	mGeo->VertexByteStride = sizeof(Vertex);
+	mGeo->VertexBufferByteSize = vbByteSize;
+	mGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
+	mGeo->IndexBufferByteSize = ibByteSize;
+
+	mGeo->DrawArgs["particle"] = gridSubmesh;
+
+	
 	for (int c = 0; c < numberOfParticles; c++)
 	{
-		auto par = new Particle(mesh, device, commandList);
+		auto par = new Particle(mGeo, device, commandList);
 		//(&par->World, XMMatrixScaling(2.0f, 2.0f, 2.0f)*XMMatrixTranslation(0.0f, 0.5f, 0.0f));
 
 		//par->Geo = mesh.get();
 		par->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		par->IndexCount = par->Geo->DrawArgs["particle"].IndexCount;
+		par->IndexCount = mGeo->DrawArgs["particle"].IndexCount;
 		par->ObjCBIndex = c;
-		par->StartIndexLocation = par->Geo->DrawArgs["particle"].StartIndexLocation;
-		par->BaseVertexLocation = par->Geo->DrawArgs["particle"].BaseVertexLocation;
+		par->StartIndexLocation = mGeo->DrawArgs["particle"].StartIndexLocation;
+		par->BaseVertexLocation = mGeo->DrawArgs["particle"].BaseVertexLocation;
 		mParticles.push_back(std::move(par));
 	}
 
@@ -61,6 +112,25 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 	//2.1 do the same for index and primitive topology if needed
 	//2.2 set graphics root D table
 	//2.3 Draw indexed instanced
+
+	//for (int c = 0; c < numberOfParticles; c++)
+	//{
+	//	mParticles.at(c)->updateGeo(device, commandList);
+	//}
+
+	//commandList->IASetVertexBuffers(0, 1, &mGeo->VertexBufferView());
+
+	//	commandList->IASetIndexBuffer(&mGeo->IndexBufferView());
+	//	commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+	//	commandList->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
+
+	//	commandList->DrawIndexedInstanced(mGeo->DrawArgs["particle"].IndexCount,
+	//		1,
+	//		mGeo->DrawArgs["particle"].StartIndexLocation,
+	//		mGeo->DrawArgs["particle"].BaseVertexLocation,
+	//		0);
 
 	for (int c = 0; c < numberOfParticles; c++)
 	{

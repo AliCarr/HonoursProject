@@ -8,7 +8,8 @@ Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPt
 	gridIndexOffset = 0;
 	position.y = 1;
 	position = { ((float)(rand() % 3)), 1.0f, ((float)(rand() % 50) / 40.0f) };
-	CreateParticle(device, commandList);
+	//CreateParticle(device, commandList);
+	Geo = meshGeo.get();
 	World = XMMatrixTranslation(position.x, position.y, position.z);
 	isActive = true;
 }
