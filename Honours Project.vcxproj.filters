@@ -34,6 +34,12 @@
     <Filter Include="Header Files\Particle System">
       <UniqueIdentifier>{466c7fab-4ae3-43f3-860d-5b068fc918c4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Tools\GUI">
+      <UniqueIdentifier>{b166a86b-bd49-41f9-bdbb-76b86bbed13e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Tools\GUI">
+      <UniqueIdentifier>{be01d90b-21e7-453a-b6ff-27f7b19154c9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\MathHelper.cpp">
@@ -77,6 +83,18 @@
     </ClCompile>
     <ClCompile Include="ModelLoader.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-master\imgui.cpp">
+      <Filter>Source Files\Tools\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-master\imgui_demo.cpp">
+      <Filter>Source Files\Tools\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-master\imgui_draw.cpp">
+      <Filter>Source Files\Tools\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-master\imgui_widgets.cpp">
+      <Filter>Source Files\Tools\GUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +148,24 @@
     </ClInclude>
     <ClInclude Include="ModelLoader.h">
       <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imconfig.h">
+      <Filter>Header Files\Tools\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imgui.h">
+      <Filter>Header Files\Tools\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imgui_internal.h">
+      <Filter>Header Files\Tools\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imstb_rectpack.h">
+      <Filter>Header Files\Tools\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imstb_textedit.h">
+      <Filter>Header Files\Tools\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imstb_truetype.h">
+      <Filter>Header Files\Tools\GUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

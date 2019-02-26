@@ -1,8 +1,0 @@
-﻿  App.cpp
-  Particle.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\particle.cpp(52): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
-  ParticleManager.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(21): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(63): warning C4316: 'Particle': object allocated on the heap may not be aligned 16
-  Generating Code...
-  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

@@ -102,9 +102,9 @@ void Particle::updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft
 
 	for (size_t i = 0; i < mesh.Vertices.size(); ++i, ++k)
 	{
-		vertices[k].Pos.x = mesh.Vertices[i].Position.x + position.x  ;
-		vertices[k].Pos.y = mesh.Vertices[i].Position.y + position.y  ;
-		vertices[k].Pos.z = mesh.Vertices[i].Position.z + position.z  ;
+		vertices[k].Pos.x = mesh.Vertices[i].Position.x + position.x;
+		vertices[k].Pos.y = mesh.Vertices[i].Position.y + position.y;
+		vertices[k].Pos.z = mesh.Vertices[i].Position.z + position.z;
 		//vertices[k].Pos = position;
 		vertices[k].texCoord = XMFLOAT2(1, 1);
 		vertices[k].Color = XMFLOAT4(1, 1, 0, 1);
