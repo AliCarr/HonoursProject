@@ -44,19 +44,16 @@ bool App::Initialize()
 	BuildConstantBuffers();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
-	
-	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
 	BuildPSO();
 
-	ThrowIfFailed(mCommandList->Close());
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
 
+	ThrowIfFailed(mCommandList->Close());
+		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
 
-	timer = 0;
 	mControl = new Controls();
-
 	mCamera.SetPosition(0.0f, 2.0f, -15.0f);
 
 	return true;
@@ -67,7 +64,11 @@ void App::OnResize()
 	D3DApp::OnResize();
 
 	// The window resized, so update the aspect ratio and recompute the projection matrix.
-	XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
+	XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, 
+										  AspectRatio(), 
+										  1.0f, 
+										  1000.0f);
+
 	XMStoreFloat4x4(&mProj, P);
 
 	mCamera.SetLens(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
@@ -91,27 +92,22 @@ void App::Update(const GameTimer& gt)
 	XMMATRIX proj = mCamera.GetProj();
 	XMStoreFloat4x4(&mView, view);
 
-	//XMFLOAT4X4 translation = MathHelper::Identity4x4();
-	XMMATRIX scale = XMMatrixScaling(10, 10, 10);
-	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(0, 0, 10);
+
+	//XMMATRIX scale = XMMatrixScaling(10, 10, 10);
+	//XMMATRIX rotation = XMMatrixRotationRollPitchYaw(0, 0, 10);
 
 	XMMATRIX world = XMLoadFloat4x4(&mWorld);
-	//pManager->Update(world, gt.DeltaTime());
 
-	//world = XMMatrixMultiply(world, rotation);
-//	XMMATRIX proj = XMLoadFloat4x4(&mProj);
 	XMMATRIX worldViewProj = world * view * proj;
 
-	// Update the constant buffer with the latest worldViewProj matrix.
 	ObjectConstants objConstants;
-	//pManager->UpdateCBuffers(mObjectCB);
 
 	pManager->Update(world, gt.DeltaTime(), mCommandList, md3dDevice);
 
 	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
 	timer += gt.DeltaTime();
 
-	objConstants.yPosiiton = timer;
+	objConstants.yPosiiton += gt.DeltaTime();;
 
 	
 
