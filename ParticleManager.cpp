@@ -32,6 +32,7 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, M
 	{
 		vertices[k].Pos = particleMeshData.Vertices[i].Position;
 		vertices[k].Color = XMFLOAT4(DirectX::Colors::Crimson);
+		vert[k].Pos = vertices[k].Pos;
 	}
 	indices.insert(indices.end(),
 		std::begin(particleMeshData.GetIndices16()),
@@ -103,11 +104,11 @@ void ParticleManager::Update(XMMATRIX& mat, float time, Microsoft::WRL::ComPtr<I
 
 		for (int i = 0; i < vertexOffset; i++)
 		{
-			mParticles.at(c)->position.x = 0.0;
-			mParticles.at(c)->position.y = 0.0;
-			mParticles.at(c)->position.z = 0.0;
+			mParticles.at(c)->position.x += vert[i].Pos.x + (time/10);
+			mParticles.at(c)->position.y += vert[i].Pos.y + (time/10);
+			mParticles.at(c)->position.z += vert[i].Pos.z + (time/10);
 			Vertex v;
-			v.Pos = {0, 0, 0};
+			v.Pos = mParticles.at(c)->position;
 			
 			v.Color = XMFLOAT4(DirectX::Colors::Crimson);
 			v.texCoord = { 0, 0 };

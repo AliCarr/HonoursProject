@@ -39,9 +39,11 @@ private:
 	UINT indexCount;
 	unsigned long long totalVertexCount;
 
-	static const int numberOfParticles = 4;
+	static const int numberOfParticles = 3000;
 
 	//ParticleInfromation* mParticle[numberOfParticles];
 	//Particle* mParticle[];
 	std::vector<ParticleInfromation*> mParticles;
+
+	Vertex vert[numberOfParticles];
 };
