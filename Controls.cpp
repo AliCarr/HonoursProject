@@ -4,6 +4,8 @@
 
 Controls::Controls()
 {
+	mCamera = new Camera();
+	mCamera->SetPosition(0.0f, 2.0f, -15.0f);
 }
 
 
@@ -24,7 +26,7 @@ void Controls::OnMouseUp(WPARAM btnState, int x, int y)
 	ReleaseCapture();
 }
 
-void Controls::OnMouseMove(WPARAM btnState, int x, int y, float *mTheta, float *mPhi, float *mRadius)
+void Controls::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
@@ -32,26 +34,41 @@ void Controls::OnMouseMove(WPARAM btnState, int x, int y, float *mTheta, float *
 		float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
 		float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
 
-		// Update angles based on input to orbit camera around box.
-		*mTheta += dx;
-		*mPhi += dy;
-
-		// Restrict the angle mPhi.
-		*mPhi = MathHelper::Clamp(*mPhi, 0.1f, MathHelper::Pi - 0.1f);
-	}
-	else if ((btnState & MK_RBUTTON) != 0)
-	{
-		// Make each pixel correspond to 0.005 unit in the scene.
-		float dx = 0.005f*static_cast<float>(x - mLastMousePos.x);
-		float dy = 0.005f*static_cast<float>(y - mLastMousePos.y);
-
-		// Update the camera radius based on input.
-		*mRadius += dx - dy;
-
-		// Restrict the radius.
-		*mRadius = MathHelper::Clamp(*mRadius, 3.0f, 15.0f);
+		mCamera->Pitch(dy);
+		mCamera->RotateY(dx);
 	}
 
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
 }
+
+void Controls::OnKeyboardInput(float gt)
+{
+	const float dt = gt;
+
+	if (GetAsyncKeyState('W') & 0x8000)
+		mCamera->Walk(10.0f*dt);
+
+	if (GetAsyncKeyState('S') & 0x8000)
+		mCamera->Walk(-10.0f*dt);
+
+	if (GetAsyncKeyState('A') & 0x8000)
+		mCamera->Strafe(-10.0f*dt);
+
+	if (GetAsyncKeyState('D') & 0x8000)
+		mCamera->Strafe(10.0f*dt);
+
+	mCamera->UpdateViewMatrix();
+	//mCamera.Update();
+}
+
+void Controls::OnResize(float ratio)
+{
+	mCamera->Resize(ratio);
+	mCamera->SetLens(0.25f*MathHelper::Pi, ratio, 1.0f, 1000.0f);
+}
+//
+//Camera Controls::GetCamera()
+//{
+//	return mCamera;
+//}

@@ -1,2 +1,6 @@
-﻿  App.cpp
-  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\Debug\Honours Project.exe
+﻿  ParticleManager.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(11): warning C4244: 'argument': conversion from 'float' to 'GeometryGenerator::uint32', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(24): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(93): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(104): warning C4018: '<': signed/unsigned mismatch
+  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

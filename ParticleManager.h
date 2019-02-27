@@ -38,10 +38,10 @@ private:
 	UINT vertexOffset;
 	UINT indexCount;
 	unsigned long long totalVertexCount;
-	
-	static const int numberOfParticles = 1;
 
-	ParticleInfromation* mParticle[numberOfParticles];
+	static const int numberOfParticles = 4;
+
+	//ParticleInfromation* mParticle[numberOfParticles];
 	//Particle* mParticle[];
-	//std::vector<Particle*> mParticles;
+	std::vector<ParticleInfromation*> mParticles;
 };

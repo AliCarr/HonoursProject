@@ -21,6 +21,8 @@ public:
 
 	UINT ObjCBIndex = -1;
 	void updateGeo(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+	GeometryGenerator::MeshData mesh;
+
 private:
 	//Fixed Values
 	const float height = 0.01f, width = 0.01f, velocity = 0.5f + ((rand() % 50) / 40);
@@ -39,7 +41,7 @@ private:
 	GeometryGenerator geoGen;
 	UINT gridVertexOffset;
 	UINT gridIndexOffset;
-	GeometryGenerator::MeshData mesh;
+
 
 	//Functions
 	bool CreateParticle(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);

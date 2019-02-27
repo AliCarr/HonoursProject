@@ -35,6 +35,7 @@ void Camera::SetPosition(const XMFLOAT3& v)
 {
 	mPosition = v;
 	mViewDirty = true;
+
 }
 
 XMVECTOR Camera::GetRight()const
@@ -272,4 +273,43 @@ void Camera::UpdateViewMatrix()
 	}
 }
 
+void Camera::Update()
+{
+	// Convert Spherical to Cartesian coordinates.
+	float x = mRadius * sinf(mPhi)*cosf(mTheta);
+	float z = mRadius * sinf(mPhi)*sinf(mTheta);
+	float y = mRadius * cosf(mPhi);
+
+	// Build the view matrix.
+	XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
+	XMVECTOR target = XMVectorZero();
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	XMMATRIX view = GetView();
+	XMMATRIX proj = GetProj();
+	XMStoreFloat4x4(&mView, view);
+
+
+	XMMATRIX scale = XMMatrixScaling(10, 10, 10);
+	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(0, 0, 10);
+
+	world = XMLoadFloat4x4(&mWorld);
+	worldViewProj = world * view * proj;
+}
+
+XMMATRIX Camera::GetWorld()
+{
+	return world;
+}
+
+XMMATRIX Camera::GetWorldViewProj()
+{
+	return worldViewProj;
+}
+
+void Camera::Resize(float ratio)
+{
+	XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, ratio, 1.0f, 1000.0f);
+	XMStoreFloat4x4(&mProj, P);
+}
 

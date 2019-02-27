@@ -27,27 +27,30 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, M
 	UINT k = 0;
 	//for (int c = 0; c < numberOfParticles; c++)
 	//{
-		for (size_t i = 0; i < vertexOffset; i++, k++)
-		{
-			vertices[k].Pos = particleMeshData.Vertices[i].Position;
-			vertices[k].Color = XMFLOAT4(DirectX::Colors::Crimson);
-		}
-		indices.insert(indices.end(), 
-					   std::begin(particleMeshData.GetIndices16()), 
-					   std::end(particleMeshData.GetIndices16()));
+
+	for (size_t i = 0; i < vertexOffset; i++, k++)
+	{
+		vertices[k].Pos = particleMeshData.Vertices[i].Position;
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::Crimson);
+	}
+	indices.insert(indices.end(),
+		std::begin(particleMeshData.GetIndices16()),
+		std::end(particleMeshData.GetIndices16()));
 	//}
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeo->VertexBufferCPU));
-	CopyMemory(mGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+	mGeo->VertexBufferCPU = nullptr;
+	mGeo->VertexBufferGPU = nullptr;
+	//ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeo->VertexBufferCPU));
+	//CopyMemory(mGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
 	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mGeo->IndexBufferCPU));
 	CopyMemory(mGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-	mGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
-		commandList.Get(), vertices.data(), vbByteSize, mGeo->VertexBufferUploader);
+	//mGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+	//	commandList.Get(), vertices.data(), vbByteSize, mGeo->VertexBufferUploader);
 
 	mGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
 		commandList.Get(), indices.data(), ibByteSize, mGeo->IndexBufferUploader);
@@ -62,15 +65,19 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, M
 
 	for (int c = 0; c < numberOfParticles; c++)
 	{
-		mParticle[c] = new ParticleInfromation();
-		mParticle[c]->geo = new MeshGeometry();
-		mParticle[c]->geo = mGeo.get();
-		mParticle[c]->IndexCount = mGeo->DrawArgs["particle"].IndexCount;
-		mParticle[c]->StartIndexLocation = mGeo->DrawArgs["particle"].StartIndexLocation;
-		mParticle[c]->BaseVertexLocation = mGeo->DrawArgs["particle"].BaseVertexLocation;
-		mParticle[c]->vbByteSize = vbByteSize;
-		mParticle[c]->position = { 0, 0, 0 };
-		mParticle[c]->dynamicVB = std::make_unique<UploadBuffer<Vertex>>(device.Get(), totalVertexCount, false);
+		auto par = new ParticleInfromation();
+
+		//par = new ParticleInfromation();
+		par->geo = new MeshGeometry();
+		par->geo = mGeo.get();
+		par->IndexCount = mGeo->DrawArgs["particle"].IndexCount;
+		par->StartIndexLocation = mGeo->DrawArgs["particle"].StartIndexLocation;
+		par->BaseVertexLocation = mGeo->DrawArgs["particle"].BaseVertexLocation;
+		par->vbByteSize = vbByteSize;
+		par->position = { 0, 0, 0 };
+		par->dynamicVB = std::make_unique<UploadBuffer<Vertex>>(device.Get(), 6, false);
+		
+		mParticles.push_back(std::move(par));
 	}
 }
 
@@ -81,36 +88,41 @@ ParticleManager::~ParticleManager()
 
 void ParticleManager::Update(XMMATRIX& mat, float time, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, Microsoft::WRL::ComPtr<ID3D12Device> &device)
 {
+
+
 	std::vector<Vertex> vertices(totalVertexCount);
 	std::vector<std::uint16_t> indices;
 
-	
+
 	UINT k = 0;
 
 	for (int c = 0; c < numberOfParticles; c++)
 	{
-		auto currVB = mParticle[c]->dynamicVB.get();
+		auto currVB = mParticles.at(c)->dynamicVB.get();
+	/*	mParticles.at(c)->geo->VertexBufferGPU = nullptr;*/
 
-		for (size_t i = 0; i < vertexOffset; i++, k++)
+		for (int i = 0; i < vertexOffset; i++)
 		{
-			mParticle[c]->position.x = 0.1;
-			mParticle[c]->position.y = 0.1;
-			mParticle[c]->position.z = 0.1;
-			vertices[i].Pos = mParticle[c]->position;
-			vertices[i].Color = XMFLOAT4(DirectX::Colors::Crimson);
-			vertices[i].texCoord = { 0, 0 };
-			currVB->CopyData(i, vertices[i]);
+			mParticles.at(c)->position.x = 0.0;
+			mParticles.at(c)->position.y = 0.0;
+			mParticles.at(c)->position.z = 0.0;
+			Vertex v;
+			v.Pos = {0, 0, 0};
+			
+			v.Color = XMFLOAT4(DirectX::Colors::Crimson);
+			v.texCoord = { 0, 0 };
+			currVB->CopyData(i, v);
 		}
 
-	//	ThrowIfFailed(D3DCreateBlob(mParticle[c]->vbByteSize, &mParticle[c]->geo->VertexBufferCPU));
-	//	CopyMemory(mParticle[c]->geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), mParticle[c]->vbByteSize);
-		
+		//	ThrowIfFailed(D3DCreateBlob(mParticle[c]->vbByteSize, &mParticle[c]->geo->VertexBufferCPU));
+		//	CopyMemory(mParticle[c]->geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), mParticle[c]->vbByteSize);
 
-		//mParticle[c]->geo->VertexBufferGPU = currVB->Resource();
-		//const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-		//ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeo->VertexBufferCPU));
-		//CopyMemory(mGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-		currVB = NULL;
+
+
+
+		mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
+	
+		//currVB = NULL;
 		//mGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
 		//	commandList.Get(), vertices.data(), vbByteSize, mGeo->VertexBufferUploader);
 	}
@@ -122,17 +134,17 @@ void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &
 {
 	for (int c = 0; c < numberOfParticles; c++)
 	{
-		commandList->IASetVertexBuffers(0, 1, &mParticle[c]->geo->VertexBufferView());
+		commandList->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
 
-		commandList->IASetIndexBuffer(&mParticle[c]->geo->IndexBufferView());
+		commandList->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
 		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		commandList->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
 
-		commandList->DrawIndexedInstanced(mParticle[c]->geo->DrawArgs["particle"].IndexCount,
+		commandList->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
 			1,
-			mParticle[c]->geo->DrawArgs["particle"].StartIndexLocation,
-			mParticle[c]->geo->DrawArgs["particle"].BaseVertexLocation,
+			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
+			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
 			0);
 	}
 
