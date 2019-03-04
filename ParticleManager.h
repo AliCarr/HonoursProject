@@ -1,20 +1,19 @@
 #pragma once
 
 #include "stdafx.h"
-#include "Particle.h"
+#include <stdio.h>
+#include <time.h>
 
 struct ParticleInfromation
 {
-	const float height = 0.01f, width = 0.01f;
+	//A unit of mesurement for the particles life
+	float energy;
 	XMFLOAT3 position;
 	XMFLOAT3 colour;
-	float energy;
+	XMFLOAT3 velocity;
+	float accelertaion;
 	bool isActive;
 	MeshGeometry* geo = nullptr;
-	UINT IndexCount;
-	UINT StartIndexLocation;
-	int BaseVertexLocation;
-	UINT vbByteSize;
 	std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
 };
 
@@ -26,22 +25,43 @@ public:
 
 	void Update(XMMATRIX&, float, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &, Microsoft::WRL::ComPtr<ID3D12Device> &);
 	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device);
-	void UpdateCBuffers(std::unique_ptr<UploadBuffer<ObjectConstants>> &);
-	std::unique_ptr<MeshGeometry> mGeo = nullptr;
-	MeshGeometry GetMeshGeo() { return *mGeo; };
-	int GetIndexCount();
 
-	void UpdateGeometry(MeshGeometry&);
+	MeshGeometry *mGeo = nullptr;
+	MeshGeometry GetMeshGeo() { return *mGeo; };
 
 private:
 	UINT indexOffset;
 	UINT vertexOffset;
 	UINT indexCount;
+
 	unsigned long long totalVertexCount;
+	static const int numberOfParticles = 1024;
 
-	static const int numberOfParticles = 4;
-
-	//ParticleInfromation* mParticle[numberOfParticles];
-	//Particle* mParticle[];
 	std::vector<ParticleInfromation*> mParticles;
+	GeometryGenerator generator;
+	SubmeshGeometry boxSubmesh;
+	Vertex vert[numberOfParticles];
+
+	const float width = 0.1f;
+	const float depth = 0.1f;
+	const float rows = 2.0f;
+	const float columns = 2.0f;
+
+	//The smaller this is the faster it'll go
+	const float speed = 10;
+
+	time_t mTime;
+
+
+	XMFLOAT3 StartingVelocity();
+	XMFLOAT3 StartingPosition();
+	XMFLOAT3 gravity;
+
+	void ParticleReset(int);
+
+	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
+
+
+
 };

@@ -2,7 +2,7 @@
 
 Particle::Particle(std::unique_ptr<MeshGeometry> &meshGeo, Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
 {
-	mesh = geoGen.CreateGrid(width, height, 4, 4);
+	mesh = geoGen.CreateGrid(width, height, 2, 2);
 
 	gridVertexOffset = 0;
 	gridIndexOffset = 0;
