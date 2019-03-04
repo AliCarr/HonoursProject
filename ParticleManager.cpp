@@ -41,16 +41,15 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, M
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-	mGeo->VertexBufferCPU = nullptr;
-	mGeo->VertexBufferGPU = nullptr;
-	//ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeo->VertexBufferCPU));
-	//CopyMemory(mGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mGeo->VertexBufferCPU));
+	CopyMemory(mGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
 	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mGeo->IndexBufferCPU));
 	CopyMemory(mGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-	//mGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
-	//	commandList.Get(), vertices.data(), vbByteSize, mGeo->VertexBufferUploader);
+	mGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
+		commandList.Get(), vertices.data(), vbByteSize, mGeo->VertexBufferUploader);
 
 	mGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
 		commandList.Get(), indices.data(), ibByteSize, mGeo->IndexBufferUploader);
@@ -100,17 +99,16 @@ void ParticleManager::Update(XMMATRIX& mat, float time, Microsoft::WRL::ComPtr<I
 	{
 		auto currVB = mParticles.at(c)->dynamicVB.get();
 	/*	mParticles.at(c)->geo->VertexBufferGPU = nullptr;*/
-
+		std::vector<Vertex> newV(totalVertexCount);
 		for (int i = 0; i < vertexOffset; i++)
 		{
 			mParticles.at(c)->position.x = 0.0;
 			mParticles.at(c)->position.y = 0.0;
 			mParticles.at(c)->position.z = 0.0;
 			Vertex v;
-			v.Pos = {0, 0, 0};
-			
-			v.Color = XMFLOAT4(DirectX::Colors::Crimson);
-			v.texCoord = { 0, 0 };
+				v.Pos = {1, 0, 0};
+				v.Color = XMFLOAT4(DirectX::Colors::Crimson);
+				v.texCoord = { 1, 1 };
 			currVB->CopyData(i, v);
 		}
 
