@@ -6,7 +6,7 @@
 #include "ParticleManager.h"
 #include "Controls.h"
 #include "Common/Camera.h"
-
+#include "imgui-master\imgui.h"
 class App : public D3DApp
 {
 public:
@@ -69,4 +69,6 @@ private:
 	std::vector<uint32_t> indices;
 
 	Controls *mControl;
+
+	bool testing;
 };

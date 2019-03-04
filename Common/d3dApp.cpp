@@ -112,8 +112,11 @@ bool D3DApp::Initialize()
 	if(!InitDirect3D())
 		return false;
 
+	my_tool_active = true;
     // Do the initial resize code.
     OnResize();
+	ImGuiContext *fdsa;
+
 
 	return true;
 }

@@ -54,7 +54,7 @@ bool App::Initialize()
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
-
+	testing = true;
 
 	return true;
 }
@@ -133,6 +133,8 @@ void App::Draw(const GameTimer& gt)
 	// done for simplicity.  Later we will show how to organize our rendering code
 	// so we do not have to wait per frame.
 	FlushCommandQueue();
+
+
 }
 
 void App::OnMouseDown(WPARAM btnState, int x, int y)

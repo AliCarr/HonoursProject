@@ -42,6 +42,7 @@ private:
 	SubmeshGeometry boxSubmesh;
 	Vertex vert[numberOfParticles];
 
+	//Constants for the particles mesh
 	const float width = 0.1f;
 	const float depth = 0.1f;
 	const float rows = 2.0f;
@@ -49,6 +50,7 @@ private:
 
 	//The smaller this is the faster it'll go
 	const float speed = 10;
+	const float maxAcceleration = 10;
 
 	time_t mTime;
 

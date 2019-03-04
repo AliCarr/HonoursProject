@@ -157,6 +157,7 @@
     <ClCompile Include="imgui-master\imgui_draw.cpp" />
     <ClCompile Include="imgui-master\imgui_widgets.cpp" />
     <ClCompile Include="Lighting.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="ParticleManager.cpp" />
