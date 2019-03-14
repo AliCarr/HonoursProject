@@ -7,6 +7,8 @@
 #include "Controls.h"
 #include "Common/Camera.h"
 #include "imgui-master\imgui.h"
+
+
 class App : public D3DApp
 {
 public:
@@ -33,17 +35,13 @@ private:
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
 	void BuildModel();
-	//Scene *mScene;
+
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
 
-	//float timer;
-
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
-
-	//std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
@@ -54,13 +52,8 @@ private:
 
 	POINT mLastMousePos;
 	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
-	ParticleManager* pManager;
-	//float test = 0;
 
 	const int maxParticles = 10;
-
-	//const int WIDTH = 800;
-	//const int HEIGHT = 600;
 
 	const std::string MODEL_PATH = "Assets/Mount Wario.obj";
 	const std::string TEXTURE_PATH = "Assets/chalet.jpg";
@@ -69,6 +62,9 @@ private:
 	std::vector<uint32_t> indices;
 
 	Controls *mControl;
+	ParticleManager* pManager;
+
+	ImVec4 clear_col;
 
 	bool testing;
 };

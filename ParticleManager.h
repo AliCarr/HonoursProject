@@ -8,10 +8,12 @@ struct ParticleInfromation
 {
 	//A unit of mesurement for the particles life
 	float energy;
-	XMFLOAT3 position;
-	XMFLOAT3 colour;
-	XMFLOAT3 velocity;
 	float accelertaion;
+
+	XMFLOAT3 position;
+	//XMFLOAT3 colour;
+	XMFLOAT3 velocity;
+	
 	bool isActive;
 	MeshGeometry* geo = nullptr;
 	std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
@@ -54,16 +56,11 @@ private:
 
 	time_t mTime;
 
-
 	XMFLOAT3 StartingVelocity();
 	XMFLOAT3 StartingPosition();
 	XMFLOAT3 gravity;
 
-	void ParticleReset(int);
-
 	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
 	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
-
-
-
+	void ParticleReset(int);
 };

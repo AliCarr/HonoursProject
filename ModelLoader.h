@@ -11,7 +11,6 @@ public:
 private:
 	const std::string MODEL_PATH = "Assets/Mount Wario.obj";
 	const std::string TEXTURE_PATH = "Assets/chalet.jpg";
-	//stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;

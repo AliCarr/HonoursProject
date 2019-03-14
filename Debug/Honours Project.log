@@ -1,3 +1,2 @@
-﻿  d3dApp.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\common\d3dapp.cpp(119): warning C4101: 'fdsa': unreferenced local variable
-  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe
+﻿  App.cpp
+  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\Debug\Honours Project.exe

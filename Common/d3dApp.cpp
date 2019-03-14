@@ -39,6 +39,8 @@ D3DApp::~D3DApp()
 
 HINSTANCE D3DApp::AppInst()const
 {
+	
+	//ImGui::SetCurrentContext(ImGui::CreateContext());
 	return mhAppInst;
 }
 
@@ -115,9 +117,7 @@ bool D3DApp::Initialize()
 	my_tool_active = true;
     // Do the initial resize code.
     OnResize();
-	ImGuiContext *fdsa;
-
-
+	
 	return true;
 }
  
@@ -669,4 +669,5 @@ void D3DApp::LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format)
 
         ::OutputDebugString(text.c_str());
     }
+
 }

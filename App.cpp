@@ -50,11 +50,20 @@ bool App::Initialize()
 	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
 	BuildPSO();
 
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui_ImplWin32_Init(MainWnd());
+	ImGui_ImplDX12_Init(md3dDevice.Get(), 1, DXGI_FORMAT_R32_FLOAT, mCbvHeap->GetCPUDescriptorHandleForHeapStart(), mCbvHeap->GetGPUDescriptorHandleForHeapStart());
+	ImGui::StyleColorsDark();
+
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
 	testing = true;
+
 
 	return true;
 }
@@ -81,6 +90,9 @@ void App::Update(const GameTimer& gt)
 
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
 	mObjectCB->CopyData(0, objConstants);
+	//mhMainWnd
+
+
 }
 
 void App::Draw(const GameTimer& gt)
@@ -118,12 +130,23 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
+
+
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	ImGui::Begin("Test");
+	ImGui::End();
+	ImGui::Render();
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
 	// Done recording commands.
 	ThrowIfFailed(mCommandList->Close());
 
 	// Add the command list to the queue for execution.
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	   	 
 
 	// swap the back and front buffers
 	ThrowIfFailed(mSwapChain->Present(0, 0));
@@ -133,8 +156,6 @@ void App::Draw(const GameTimer& gt)
 	// done for simplicity.  Later we will show how to organize our rendering code
 	// so we do not have to wait per frame.
 	FlushCommandQueue();
-
-
 }
 
 void App::OnMouseDown(WPARAM btnState, int x, int y)
@@ -160,12 +181,11 @@ void App::OnKeyboardInput(const GameTimer& gt)
 void App::BuildDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
-	cbvHeapDesc.NumDescriptors = 11;
-	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	cbvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,
-		IID_PPV_ARGS(&mCbvHeap)));
+		cbvHeapDesc.NumDescriptors = 11;
+		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		cbvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
 }
 
 void App::BuildConstantBuffers()
@@ -180,9 +200,8 @@ void App::BuildConstantBuffers()
 	cbAddress += boxCBufIndex * objCBByteSize;
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-	cbvDesc.BufferLocation = cbAddress;
-	cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-
+		cbvDesc.BufferLocation = cbAddress;
+		cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 	md3dDevice->CreateConstantBufferView(
 		&cbvDesc,
 		mCbvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -332,6 +351,4 @@ void App::BuildModel()
 	submesh.BaseVertexLocation = 0;
 
 	mBoxGeo->DrawArgs["box"] = submesh;
-
-
 }

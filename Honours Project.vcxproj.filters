@@ -63,20 +63,11 @@
     <ClCompile Include="Common\GeometryGenerator.cpp">
       <Filter>Source Files\Common</Filter>
     </ClCompile>
-    <ClCompile Include="Scene.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Lighting.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Controls.cpp">
       <Filter>Source Files\Tools</Filter>
-    </ClCompile>
-    <ClCompile Include="Particle.cpp">
-      <Filter>Source Files\Particle System</Filter>
     </ClCompile>
     <ClCompile Include="ParticleManager.cpp">
       <Filter>Source Files\Particle System</Filter>
@@ -98,6 +89,12 @@
     </ClCompile>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-master\imgui_impl_dx12.cpp">
+      <Filter>Source Files\Tools\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-master\imgui_impl_win32.cpp">
+      <Filter>Source Files\Tools\GUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -128,13 +125,7 @@
     <ClInclude Include="Common\UploadBuffer.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Lighting.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="App.h">
@@ -142,9 +133,6 @@
     </ClInclude>
     <ClInclude Include="Controls.h">
       <Filter>Header Files\Tools</Filter>
-    </ClInclude>
-    <ClInclude Include="Particle.h">
-      <Filter>Header Files\Particle System</Filter>
     </ClInclude>
     <ClInclude Include="ParticleManager.h">
       <Filter>Header Files\Particle System</Filter>
@@ -168,6 +156,12 @@
       <Filter>Header Files\Tools\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imstb_truetype.h">
+      <Filter>Header Files\Tools\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imgui_impl_dx12.h">
+      <Filter>Header Files\Tools\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-master\imgui_impl_win32.h">
       <Filter>Header Files\Tools\GUI</Filter>
     </ClInclude>
   </ItemGroup>
