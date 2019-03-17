@@ -22,15 +22,16 @@ struct ParticleInfromation
 class ParticleManager
 {
 public:
-	ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, std::unique_ptr<MeshGeometry>&);
+	ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>&);
 	~ParticleManager();
 
-	void Update(XMMATRIX&, float, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &, Microsoft::WRL::ComPtr<ID3D12Device> &);
-	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device);
+	void Update(XMMATRIX&, float, ID3D12GraphicsCommandList* commandList, Microsoft::WRL::ComPtr<ID3D12Device> &);
+	void Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device);
 
 	MeshGeometry *mGeo = nullptr;
 	MeshGeometry GetMeshGeo() { return *mGeo; };
 
+	int theOffset;
 private:
 	UINT indexOffset;
 	UINT vertexOffset;
@@ -60,7 +61,7 @@ private:
 	XMFLOAT3 StartingPosition();
 	XMFLOAT3 gravity;
 
-	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList);
+	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList *commandList);
 	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
 	void ParticleReset(int);
 };

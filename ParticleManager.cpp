@@ -1,12 +1,12 @@
 #include "ParticleManager.h"
 #include <cstdlib>
 
-ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, std::unique_ptr<MeshGeometry>& mesh)
+ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh)
 {
 	assert(GenerateParticleMesh(device, commandList));
 
 	srand((unsigned)time(&mTime));
-
+	theOffset = sizeof(Vertex);
 	for (int c = 0; c < numberOfParticles; c++)
 	{
 		auto par = new ParticleInfromation();
@@ -18,7 +18,8 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, M
 		par->accelertaion = 0;
 		par->energy = 5;
 		mParticles.push_back(std::move(par));
-	}
+		theOffset += 144;
+ 	}
 }
 
 
@@ -31,7 +32,7 @@ ParticleManager::~ParticleManager()
 	}
 }
 
-void ParticleManager::Update(XMMATRIX& mat, float time, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, Microsoft::WRL::ComPtr<ID3D12Device> &device)
+void ParticleManager::Update(XMMATRIX& mat, float time, ID3D12GraphicsCommandList* commandList, Microsoft::WRL::ComPtr<ID3D12Device> &device)
 {
 	for (int c = 0; c < numberOfParticles; c++)
 	{
@@ -45,7 +46,7 @@ void ParticleManager::Update(XMMATRIX& mat, float time, Microsoft::WRL::ComPtr<I
 	}
 }
 
-void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device)
+void ParticleManager::Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device)
 {
 	for (int c = 0; c < numberOfParticles; c++)
 	{
@@ -87,7 +88,7 @@ void ParticleManager::ParticleReset(int current)
 	mParticles.at(current)->velocity = StartingVelocity();
 }
 
-bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> &commandList)
+bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList *commandList)
 {
 	mGeo = new MeshGeometry();
 	mGeo->Name = "shapeGeo";
@@ -133,7 +134,7 @@ bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> 
 	CopyMemory(mGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
 	mGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(device.Get(),
-		commandList.Get(),
+		commandList,
 		indices.data(),
 		ibByteSize,
 		mGeo->IndexBufferUploader);

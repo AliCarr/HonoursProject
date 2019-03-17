@@ -67,4 +67,8 @@ private:
 	ImVec4 clear_col;
 
 	bool testing;
+
+	void GUIInit();
+	void GUIUpdate();
+	void GUIRender();
 };

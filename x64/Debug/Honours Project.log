@@ -1,6 +1,6 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Box.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   App.cpp
-c:\users\alastair ross\documents\github\honoursproject\app.cpp(322): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\app.cpp(294): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
           with
           [
               _Ty=unsigned int
