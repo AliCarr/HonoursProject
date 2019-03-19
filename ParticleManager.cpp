@@ -100,7 +100,7 @@ bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> 
 	indexCount = (UINT)particleMeshData.Indices32.size();
 
 	boxSubmesh.IndexCount = (UINT)particleMeshData.Indices32.size();
-	boxSubmesh.StartIndexLocation = 0;
+	boxSubmesh.StartIndexLocation =  0;
 	boxSubmesh.BaseVertexLocation = 0;
 
 	totalVertexCount = vertexOffset;
@@ -155,8 +155,8 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 {
 
 	if(mParticles.at(current)->accelertaion <= maxAcceleration)
-		mParticles.at(current)->accelertaion += time / 30;
-	for (int i = 0; i < vertexOffset; i++)
+		mParticles.at(current)->accelertaion += time / 30.0f;
+	for (UINT i = 0; i < vertexOffset; i++)
 	{
 		//Offset the cooridnates for each vertex
 		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(time / speed));
@@ -170,11 +170,12 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 		buffer->CopyData(i, v);
 	}
 
-	if (mParticles.at(current)->position.y <= -3)
+	if (mParticles.at(current)->position.y <= -3.0f)
 	{
-		mParticles.at(current)->accelertaion = -mParticles.at(current)->accelertaion / 2.2;
-		mParticles.at(current)->velocity.x /= 1.1;
-		mParticles.at(current)->velocity.z /= 1.1;
+		mParticles.at(current)->accelertaion = -mParticles.at(current)->accelertaion / 2.2f;
+		mParticles.at(current)->velocity.x /= 1.1f;
+		mParticles.at(current)->velocity.z /= 1.1f;
+		mParticles.at(current)->position.y = -2.8f;
 	}
 
 	if (mParticles.at(current)->energy <= 0)

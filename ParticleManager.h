@@ -46,8 +46,8 @@ private:
 	Vertex vert[numberOfParticles];
 
 	//Constants for the particles mesh
-	const float width = 0.1f;
-	const float depth = 0.1f;
+	const float width = 0.01f;
+	const float depth = 0.01f;
 	const float rows = 2.0f;
 	const float columns = 2.0f;
 

@@ -159,9 +159,9 @@
     <ClCompile Include="imgui-master\imgui_impl_dx12.cpp" />
     <ClCompile Include="imgui-master\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui-master\imgui_widgets.cpp" />
-    <ClCompile Include="Main.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="ParticleManager.cpp" />
+    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\colorPS.hlsl">
@@ -198,6 +198,7 @@
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="UI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

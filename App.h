@@ -6,7 +6,7 @@
 #include "ParticleManager.h"
 #include "Controls.h"
 #include "Common/Camera.h"
-#include "imgui-master\imgui.h"
+#include "UI.h"
 
 
 class App : public D3DApp
@@ -40,20 +40,17 @@ private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
-
-	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
-
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
-
-	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
-
 	ComPtr<ID3D12PipelineState> mPSO = nullptr;
 
-	POINT mLastMousePos;
+	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
-	const int maxParticles = 10;
+	POINT mLastMousePos;
+	
+	//const int maxParticles = 10;
 
 	const std::string MODEL_PATH = "Assets/Mount Wario.obj";
 	const std::string TEXTURE_PATH = "Assets/chalet.jpg";
@@ -63,12 +60,5 @@ private:
 
 	Controls *mControl;
 	ParticleManager* pManager;
-
-	ImVec4 clear_col;
-
-	bool testing;
-
-	void GUIInit();
-	void GUIUpdate();
-	void GUIRender();
+	UI *mUI;
 };

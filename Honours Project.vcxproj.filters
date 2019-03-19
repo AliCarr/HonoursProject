@@ -34,11 +34,17 @@
     <Filter Include="Header Files\Particle System">
       <UniqueIdentifier>{466c7fab-4ae3-43f3-860d-5b068fc918c4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Tools\GUI">
-      <UniqueIdentifier>{b166a86b-bd49-41f9-bdbb-76b86bbed13e}</UniqueIdentifier>
+    <Filter Include="Libraries">
+      <UniqueIdentifier>{bb8ea323-182e-47b4-871d-1fd845983aa7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Tools\GUI">
+    <Filter Include="Libraries\GUI">
       <UniqueIdentifier>{be01d90b-21e7-453a-b6ff-27f7b19154c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\Headers">
+      <UniqueIdentifier>{91f144eb-0ec4-4094-8ede-61fc59851e8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\Headers\GUI">
+      <UniqueIdentifier>{b166a86b-bd49-41f9-bdbb-76b86bbed13e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -72,29 +78,29 @@
     <ClCompile Include="ParticleManager.cpp">
       <Filter>Source Files\Particle System</Filter>
     </ClCompile>
-    <ClCompile Include="ModelLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="imgui-master\imgui.cpp">
-      <Filter>Source Files\Tools\GUI</Filter>
+      <Filter>Libraries\GUI</Filter>
     </ClCompile>
     <ClCompile Include="imgui-master\imgui_demo.cpp">
-      <Filter>Source Files\Tools\GUI</Filter>
+      <Filter>Libraries\GUI</Filter>
     </ClCompile>
     <ClCompile Include="imgui-master\imgui_draw.cpp">
-      <Filter>Source Files\Tools\GUI</Filter>
+      <Filter>Libraries\GUI</Filter>
     </ClCompile>
     <ClCompile Include="imgui-master\imgui_widgets.cpp">
-      <Filter>Source Files\Tools\GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Main.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Libraries\GUI</Filter>
     </ClCompile>
     <ClCompile Include="imgui-master\imgui_impl_dx12.cpp">
-      <Filter>Source Files\Tools\GUI</Filter>
+      <Filter>Libraries\GUI</Filter>
     </ClCompile>
     <ClCompile Include="imgui-master\imgui_impl_win32.cpp">
-      <Filter>Source Files\Tools\GUI</Filter>
+      <Filter>Libraries\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelLoader.cpp">
+      <Filter>Source Files\Tools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -137,32 +143,35 @@
     <ClInclude Include="ParticleManager.h">
       <Filter>Header Files\Particle System</Filter>
     </ClInclude>
-    <ClInclude Include="ModelLoader.h">
-      <Filter>Header Files\Tools</Filter>
-    </ClInclude>
     <ClInclude Include="imgui-master\imconfig.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imgui.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imgui_internal.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imstb_rectpack.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imstb_textedit.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imstb_truetype.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imgui_impl_dx12.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="imgui-master\imgui_impl_win32.h">
-      <Filter>Header Files\Tools\GUI</Filter>
+      <Filter>Libraries\Headers\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelLoader.h">
+      <Filter>Header Files\Tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

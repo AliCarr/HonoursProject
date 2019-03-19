@@ -20,15 +20,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 		return 0;
 	}
 }
-
 App::App(HINSTANCE hInstance)
 	: D3DApp(hInstance)
 {
 	mControl = new Controls();
+	mUI = new UI();
 }
 
 App::~App()
 {
+	if (mControl)
+	{
+		delete mControl;
+		mControl = 0;
+	}
+
+	if (pManager)
+	{
+		delete pManager;
+		pManager = 0;
+	}
 }
 
 bool App::Initialize()
@@ -43,18 +54,14 @@ bool App::Initialize()
 	BuildConstantBuffers();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
-	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
 	BuildPSO();
-
-	GUIInit();
-
+	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
+	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
+	
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
-	testing = true;
-
-
 	return true;
 }
 
@@ -74,21 +81,16 @@ void App::Update(const GameTimer& gt)
 	pManager->Update(mControl->mCamera->GetWorld(), gt.DeltaTime(), mCommandList, md3dDevice);
 
 	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
-	//timer += gt.DeltaTime();
 
 	objConstants.yPosiiton += gt.DeltaTime();
 
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
 	mObjectCB->CopyData(0, objConstants);
-	//mhMainWnd
-
-
 }
 
 void App::Draw(const GameTimer& gt)
 {
-	GUIUpdate();
-	//Reset the command list to prevent memory leak
+	//Reset the command list and allocator to reuse the memory
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
 
@@ -104,10 +106,9 @@ void App::Draw(const GameTimer& gt)
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	mCommandList->ResourceBarrier(1, &barrier);
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::White, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-	// Specify the buffers we are going to render to.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
@@ -116,9 +117,6 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
 	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
-	
-	ImGui::Render();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList);
 
 	mCommandList->ResourceBarrier(1, &barrier);
 	ThrowIfFailed(mCommandList->Close());
@@ -224,6 +222,7 @@ void App::BuildShadersAndInputLayout()
 
 	mInputLayout =
 	{
+		//Semantic Name, Semantic Index, Format, Input slot, Aligned Byte Offset, Input Slot Class, Instance Data Step Rate
 		{ "POSITION", 0,    DXGI_FORMAT_R32G32B32_FLOAT, 0,   0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
@@ -262,121 +261,4 @@ void App::BuildPSO()
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
 
-void App::BuildModel()
-{
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn, err;
-	//tinyobj::MaterialReader *fdsa;
 
-	//ThrowIfFailed(tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str(), TEXTURE_PATH.c_str(), true, true));
-	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str());
-	for (const auto& shape : shapes)
-	{
-		for (const auto& index : shape.mesh.indices)
-		{
-			Vertex vertex = {};
-
-			vertex.Pos = {
-				attrib.vertices[3 * index.vertex_index + 0],
-				attrib.vertices[3 * index.vertex_index + 1],
-				attrib.vertices[3 * index.vertex_index + 2]
-			};
-
-			vertex.texCoord = {
-				attrib.texcoords[2 * index.texcoord_index + 0],
-				attrib.texcoords[2 * index.texcoord_index + 1]
-			};
-
-			vertex.Color = { 1.0f, 1.0f, 1.0f , 1.0f };
-
-			vertices.push_back(vertex);
-			indices.push_back(indices.size());
-		}
-	}
-
-	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint32_t);
-
-	mBoxGeo = std::make_unique<MeshGeometry>();
-	mBoxGeo->Name = "boxGeo";
-
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mBoxGeo->VertexBufferCPU));
-	CopyMemory(mBoxGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mBoxGeo->IndexBufferCPU));
-	CopyMemory(mBoxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-	mBoxGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList, vertices.data(), vbByteSize, mBoxGeo->VertexBufferUploader);
-
-	mBoxGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList, indices.data(), ibByteSize, mBoxGeo->IndexBufferUploader);
-
-	mBoxGeo->VertexByteStride = sizeof(Vertex);
-	mBoxGeo->VertexBufferByteSize = vbByteSize;
-
-	mBoxGeo->IndexFormat = DXGI_FORMAT_R32_UINT;
-	mBoxGeo->IndexBufferByteSize = ibByteSize;
-
-	SubmeshGeometry submesh;
-	submesh.IndexCount = (UINT)indices.size();
-	submesh.StartIndexLocation = 0;
-	submesh.BaseVertexLocation = 0;
-
-	mBoxGeo->DrawArgs["box"] = submesh;
-}
-
-void App::GUIInit()
-{
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplWin32_Init(MainWnd());
-	ImGui_ImplDX12_Init(md3dDevice.Get(), 3, DXGI_FORMAT_R8G8B8A8_UNORM, mCbvHeap->GetCPUDescriptorHandleForHeapStart(), mCbvHeap->GetGPUDescriptorHandleForHeapStart());
-	ImGui::StyleColorsDark();
-
-	//Pulled from example, will likely not be used
-	bool show_demo_window = true;
-	bool show_another_window = false;
-
-}
-
-void App::GUIUpdate()
-{
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-	ImGui_ImplDX12_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-
-	bool show = true;
-	ImGui::ShowDemoWindow(&show);
-
-	static float f = 0.0f;
-	static int counter = 0;
-
-	ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-	ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-	ImGui::Checkbox("Demo Window", &show);      // Edit bools storing our window open/close state
-	ImGui::Checkbox("Another Window", &show);
-
-	ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-	ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-	if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-		counter++;
-
-	ImGui::SameLine();
-	ImGui::Text("counter = %d", counter);
-
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::End();
-}
-
-void App::GUIRender()
-{
-
-}
