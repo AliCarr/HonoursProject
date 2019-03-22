@@ -6,7 +6,6 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, I
 	assert(GenerateParticleMesh(device, commandList));
 
 	srand((unsigned)time(&mTime));
-	theOffset = sizeof(Vertex);
 	for (int c = 0; c < numberOfParticles; c++)
 	{
 		auto par = new ParticleInfromation();
@@ -16,19 +15,25 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, I
 		par->dynamicVB = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
 		par->velocity = StartingVelocity();
 		par->accelertaion = 0;
-		par->energy = 5;
+		par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
 		mParticles.push_back(std::move(par));
-		theOffset += 144;
  	}
 }
-
 
 ParticleManager::~ParticleManager()
 {
 	for (int c = 0; c < numberOfParticles; c++)
 	{
-		delete mParticles.at(c);
-		mParticles.at(c) = 0;
+		if (mParticles.at(c))
+		{
+			delete mParticles.at(c);
+			mParticles.at(c) = 0;
+		}
+	}
+	if (mGeo)
+	{
+		delete mGeo;
+		mGeo = 0;
 	}
 }
 
@@ -37,12 +42,9 @@ void ParticleManager::Update(XMMATRIX& mat, float time, ID3D12GraphicsCommandLis
 	for (int c = 0; c < numberOfParticles; c++)
 	{
 		auto currVB = mParticles.at(c)->dynamicVB.get();
-
-		mParticles.at(c)->energy -= time;
-
-		UpdatePosition(c, time, currVB);
-
-		mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
+			mParticles.at(c)->energy -= time;
+			UpdatePosition(c, time, currVB);
+			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
 	}
 }
 
@@ -58,31 +60,31 @@ void ParticleManager::Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D
 		commandList->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
 
 		commandList->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
-			1,
-			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
-			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
-			0);
+										  1,
+										  mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
+										  mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
+										  0);
 	}
 
 }
 
 XMFLOAT3 ParticleManager::StartingVelocity()
 {
-	return XMFLOAT3{ ((float)(rand() % 300) - 150) / 100,
-		((float)(rand() % 300) - 150) / 100,
-		((float)(rand() % 300) - 150) / 100 };
+	return XMFLOAT3{ ((float)(rand() % 300) - 150.0f) / 100.0f,
+					 ((float)(rand() % 300) - 150.0f) / 100.0f,
+					 ((float)(rand() % 300) - 150.0f) / 100.0f };
 }
 
 XMFLOAT3 ParticleManager::StartingPosition()
 {
-	return XMFLOAT3{ ((float)(rand() % 200)) / 500,
-		((float)(rand() % 200)) / 400,
-		((float)(rand() % 200)) / 500 };
+	return XMFLOAT3{ ((float)(rand() % 200)) / 500.0f,
+					 ((float)(rand() % 200)) / 400.0f,
+					 ((float)(rand() % 200)) / 500.0f };
 }
 
 void ParticleManager::ParticleReset(int current)
 {
-	mParticles.at(current)->energy = 5;
+	mParticles.at(current)->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
 	mParticles.at(current)->position = StartingPosition();
 	mParticles.at(current)->accelertaion = 0;
 	mParticles.at(current)->velocity = StartingVelocity();
@@ -156,6 +158,7 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 
 	if(mParticles.at(current)->accelertaion <= maxAcceleration)
 		mParticles.at(current)->accelertaion += time / 30.0f;
+
 	for (UINT i = 0; i < vertexOffset; i++)
 	{
 		//Offset the cooridnates for each vertex
@@ -166,18 +169,20 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 		Vertex v;
 		v.Pos = mParticles.at(current)->position;
 		v.Color = XMFLOAT4(v.Pos.x, v.Pos.y, v.Pos.z, 0.0f); //Change colour based on the position
-		v.texCoord = { 0, 0 };
+		v.texCoord = { 0.0f, 0.0f };
 		buffer->CopyData(i, v);
+		mParticles.at(current)->velocity.x += 0.001f;
+		mParticles.at(current)->velocity.z += 0.001f;
 	}
 
 	if (mParticles.at(current)->position.y <= -3.0f)
 	{
 		mParticles.at(current)->accelertaion = -mParticles.at(current)->accelertaion / 2.2f;
-		mParticles.at(current)->velocity.x /= 1.1f;
-		mParticles.at(current)->velocity.z /= 1.1f;
+		mParticles.at(current)->velocity.x /= 1.2f;
+		mParticles.at(current)->velocity.z /= 1.2f;
 		mParticles.at(current)->position.y = -2.8f;
 	}
 
-	if (mParticles.at(current)->energy <= 0)
+	if (mParticles.at(current)->energy <= 0.0f)
 		ParticleReset(current);
 }

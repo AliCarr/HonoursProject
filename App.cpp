@@ -20,6 +20,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 		return 0;
 	}
 }
+
 App::App(HINSTANCE hInstance)
 	: D3DApp(hInstance)
 {
@@ -40,6 +41,12 @@ App::~App()
 		delete pManager;
 		pManager = 0;
 	}
+
+	if (mUI)
+	{
+		delete mUI;
+		mUI = 0;
+	}
 }
 
 bool App::Initialize()
@@ -55,7 +62,8 @@ bool App::Initialize()
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
 	BuildPSO();
-	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
+
+	//Setting pointer for the Particle Manager has to be done here, so that set up has been done
 	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
 	
 	ThrowIfFailed(mCommandList->Close());
@@ -96,17 +104,17 @@ void App::Draw(const GameTimer& gt)
 
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
-
 	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = CurrentBackBuffer();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = CurrentBackBuffer();
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
 
 	mCommandList->ResourceBarrier(1, &barrier);
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::White, 0, nullptr);
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
@@ -128,27 +136,8 @@ void App::Draw(const GameTimer& gt)
 	ThrowIfFailed(mSwapChain->Present(0, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
-	FlushCommandQueue();
-}
-
-void App::OnMouseDown(WPARAM btnState, int x, int y)
-{
-	mControl->OnMouseDown(btnState, x, y, MainWnd());
-}
-
-void App::OnMouseUp(WPARAM btnState, int x, int y)
-{
-	ReleaseCapture();
-}
-
-void App::OnMouseMove(WPARAM btnState, int x, int y)
-{
-	mControl->OnMouseMove(btnState, x, y);
-}
-
-void App::OnKeyboardInput(const GameTimer& gt)
-{
-	mControl->OnKeyboardInput(gt.DeltaTime());
+	//FlushCommandQueue();
+	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
 }
 
 void App::BuildDescriptorHeaps()
@@ -259,6 +248,28 @@ void App::BuildPSO()
 	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	psoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
+}
+
+
+
+void App::OnMouseDown(WPARAM btnState, int x, int y)
+{
+	mControl->OnMouseDown(btnState, x, y, MainWnd());
+}
+
+void App::OnMouseUp(WPARAM btnState, int x, int y)
+{
+	ReleaseCapture();
+}
+
+void App::OnMouseMove(WPARAM btnState, int x, int y)
+{
+	mControl->OnMouseMove(btnState, x, y);
+}
+
+void App::OnKeyboardInput(const GameTimer& gt)
+{
+	mControl->OnKeyboardInput(gt.DeltaTime());
 }
 
 

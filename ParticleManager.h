@@ -46,14 +46,14 @@ private:
 	Vertex vert[numberOfParticles];
 
 	//Constants for the particles mesh
-	const float width = 0.01f;
-	const float depth = 0.01f;
-	const float rows = 2.0f;
-	const float columns = 2.0f;
+	const float width = 0.03f;
+	const float depth = 0.03f;
+	const UINT32 rows = 2;
+	const UINT32 columns = 2;
 
 	//The smaller this is the faster it'll go
-	const float speed = 10;
-	const float maxAcceleration = 10;
+	const float speed = 10.0f;
+	const float maxAcceleration = 10.0f;
 
 	time_t mTime;
 
