@@ -250,8 +250,6 @@ void App::BuildPSO()
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
 
-
-
 void App::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	mControl->OnMouseDown(btnState, x, y, MainWnd());
