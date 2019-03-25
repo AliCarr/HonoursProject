@@ -25,3 +25,10 @@ struct ObjectConstants
 	XMFLOAT4 pulseColour;
 	float yPosiiton;
 };
+
+struct ComputeData
+{
+	XMFLOAT3 position;
+	XMFLOAT3 velocity;
+	XMFLOAT3 initialPosition;
+};

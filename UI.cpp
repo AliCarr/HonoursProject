@@ -16,15 +16,17 @@ void UI::GUIInit(HWND wnd, ID3D12Device* device, ID3D12DescriptorHeap *heap)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+
+	ImGui::StyleColorsDark();
+
 	ImGui_ImplWin32_Init(wnd);
 
 	ImGui_ImplDX12_Init(device, 
-						3, 
+						1, 
 						DXGI_FORMAT_R8G8B8A8_UNORM, 
 						heap->GetCPUDescriptorHandleForHeapStart(), 
 						heap->GetGPUDescriptorHandleForHeapStart());
 
-	ImGui::StyleColorsDark();
 
 	//Pulled from example, will likely not be used
 	bool show_demo_window = true;

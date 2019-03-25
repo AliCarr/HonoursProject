@@ -34,15 +34,20 @@ private:
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
-	void BuildModel();
+
 
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
+	ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
+	ComPtr<ID3D12RootSignature> mImGuiRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
+	ComPtr<ID3D12DescriptorHeap> mImGUIHeap = nullptr;
+
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
-	ComPtr<ID3D12PipelineState> mPSO = nullptr;
+	ComPtr<ID3DBlob> mcsByteCode = nullptr;
+	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSO;
 
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;

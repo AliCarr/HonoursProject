@@ -3,7 +3,7 @@
 
 ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh)
 {
-	assert(GenerateParticleMesh(device, commandList));
+	GenerateParticleMesh(device, commandList);
 
 	srand((unsigned)time(&mTime));
 	for (int c = 0; c < numberOfParticles; c++)
@@ -17,7 +17,28 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, I
 		par->accelertaion = 0;
 		par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
 		mParticles.push_back(std::move(par));
+
+		auto data = new ComputeData();
+
+		data->initialPosition = par->position;
+		data->position = par->position;
+		data->velocity = par->velocity;
+
+		particleInputeData.push_back(std::move(data));
  	}
+
+	UINT64	byteSize = particleInputeData.size() * sizeof(ComputeData);
+
+	mInputBuffer = d3dUtil::CreateDefaultBuffer(device.Get(), commandList, particleInputeData.data(), byteSize, mInputUploadBuffer);
+
+	ThrowIfFailed(device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(byteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS), 
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, 
+		nullptr, 
+		IID_PPV_ARGS(&mOutputBuffer)));
+
+
 }
 
 ParticleManager::~ParticleManager()
@@ -46,9 +67,25 @@ void ParticleManager::Update(XMMATRIX& mat, float time, ID3D12GraphicsCommandLis
 			UpdatePosition(c, time, currVB);
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
 	}
+
+
+	commandList->SetComputeRootShaderResourceView(0, mInputBuffer->GetGPUVirtualAddress());
+	commandList->SetComputeRootUnorderedAccessView(1, mOutputBuffer->GetGPUVirtualAddress());
+
+	commandList->Dispatch(32, 1, 1);
+
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mOutputBuffer.Get(),
+		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	//commandList->CopyResource(mInputUploadBuffer.Get(), mOutputBuffer.Get());
+
+	mOutputBuffer->Map(0, nullptr, reinterpret_cast<void**>(&particleInputeData));
+
+
+	
 }
 
-void ParticleManager::Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device)
+void ParticleManager::Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device, ComPtr<ID3D12PipelineState> pso)
 {
 	for (int c = 0; c < numberOfParticles; c++)
 	{
@@ -66,6 +103,9 @@ void ParticleManager::Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D
 										  0);
 	}
 
+	//commandList->SetPipelineState(pso.Get());
+
+
 }
 
 XMFLOAT3 ParticleManager::StartingVelocity()
@@ -77,9 +117,9 @@ XMFLOAT3 ParticleManager::StartingVelocity()
 
 XMFLOAT3 ParticleManager::StartingPosition()
 {
-	return XMFLOAT3{ ((float)(rand() % 200)) / 500.0f,
-					 ((float)(rand() % 200)) / 400.0f,
-					 ((float)(rand() % 200)) / 500.0f };
+	return XMFLOAT3{ ((float)(rand() % 400)) / 500.0f,
+					 ((float)(rand() % 400)) / 400.0f,
+					 ((float)(rand() % 400)) / 500.0f };
 }
 
 void ParticleManager::ParticleReset(int current)
@@ -168,7 +208,7 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 
 		Vertex v;
 		v.Pos = mParticles.at(current)->position;
-		v.Color = XMFLOAT4(v.Pos.x, v.Pos.y, v.Pos.z, 0.0f); //Change colour based on the position
+		v.Color = XMFLOAT4(DirectX::Colors::Blue); //Change colour based on the position
 		v.texCoord = { 0.0f, 0.0f };
 		buffer->CopyData(i, v);
 		mParticles.at(current)->velocity.x += 0.001f;

@@ -65,7 +65,8 @@ bool App::Initialize()
 
 	//Setting pointer for the Particle Manager has to be done here, so that set up has been done
 	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
-	
+	/*mUI = new UI();
+	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mImGUIHeap.Get());*/
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
@@ -86,7 +87,11 @@ void App::Update(const GameTimer& gt)
 
 	ObjectConstants objConstants;
 
-	pManager->Update(mControl->mCamera->GetWorld(), gt.DeltaTime(), mCommandList, md3dDevice);
+	
+
+//	mCommandList->SetComputeRootSignature(mRootSignature.Get());
+
+	
 
 	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
 
@@ -94,14 +99,15 @@ void App::Update(const GameTimer& gt)
 
 	objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
 	mObjectCB->CopyData(0, objConstants);
+
 }
 
 void App::Draw(const GameTimer& gt)
 {
 	//Reset the command list and allocator to reuse the memory
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
-
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO["renderPSO"].Get()));
+	//mUI->GUIUpdate();
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 	D3D12_RESOURCE_BARRIER barrier = {};
@@ -112,19 +118,31 @@ void App::Draw(const GameTimer& gt)
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-
+		mCommandList->SetPipelineState(mPSO["compute"].Get());
+		mCommandList->SetGraphicsRootSignature(mComputeRootSignature.Get());
+		pManager->Update(mControl->mCamera->GetWorld(), gt.DeltaTime(), mCommandList, md3dDevice);
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get()/*, mImGUIHeap.Get()*/ };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
+	
+
+	mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
+	//mCommandList->SetDescriptorHeaps(2, &mImGUIHeap);
+	//ImGui::Render();
+	//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList);
+
+	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice, mPSO["compute"]);
+
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
 	mCommandList->ResourceBarrier(1, &barrier);
 	ThrowIfFailed(mCommandList->Close());
@@ -148,6 +166,13 @@ void App::BuildDescriptorHeaps()
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
+
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	desc.NumDescriptors = 1;
+	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed (md3dDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mImGUIHeap)) != S_OK)
+	
 }
 
 void App::BuildConstantBuffers()
@@ -200,6 +225,36 @@ void App::BuildRootSignature()
 		serializedRootSig->GetBufferPointer(),
 		serializedRootSig->GetBufferSize(),
 		IID_PPV_ARGS(&mRootSignature)));
+
+
+	CD3DX12_ROOT_PARAMETER slotRootParameterCompute[2];
+
+	// Perfomance TIP: Order from most frequent to least frequent.
+	slotRootParameterCompute[0].InitAsShaderResourceView(0);
+	slotRootParameterCompute[1].InitAsUnorderedAccessView(0);
+
+	// A root signature is an array of root parameters.
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDescCompute(3, slotRootParameterCompute,
+		0, nullptr,
+		D3D12_ROOT_SIGNATURE_FLAG_NONE);
+
+	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+	ComPtr<ID3DBlob> serializedRootSigCompute = nullptr;
+	ComPtr<ID3DBlob> errorBlobCompute = nullptr;
+	HRESULT hrCompute = D3D12SerializeRootSignature(&rootSigDescCompute, D3D_ROOT_SIGNATURE_VERSION_1,
+		serializedRootSigCompute.GetAddressOf(), errorBlob.GetAddressOf());
+
+	if (errorBlob != nullptr)
+	{
+		::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+	}
+	ThrowIfFailed(hrCompute);
+
+	ThrowIfFailed(md3dDevice->CreateRootSignature(
+		0,
+		serializedRootSigCompute->GetBufferPointer(),
+		serializedRootSigCompute->GetBufferSize(),
+		IID_PPV_ARGS(mComputeRootSignature.GetAddressOf())));
 }
 
 void App::BuildShadersAndInputLayout()
@@ -208,6 +263,7 @@ void App::BuildShadersAndInputLayout()
 
 	mvsByteCode = d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl", nullptr, "VS", "vs_5_0");
 	mpsByteCode = d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl", nullptr, "PS", "ps_5_0");
+	mcsByteCode = d3dUtil::CompileShader(L"Shaders\\particleCS.hlsl", nullptr, "UpdateWavesCS", "cs_5_0");
 
 	mInputLayout =
 	{
@@ -247,7 +303,20 @@ void App::BuildPSO()
 	psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	psoDesc.DSVFormat = mDepthStencilFormat;
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO["renderPSO"])));
+
+
+	D3D12_COMPUTE_PIPELINE_STATE_DESC computePSO = {};
+	//ZeroMemory(&computePSO, sizeof(D3D12_COMPUTE_PIPELINE_STATE_DESC));
+	computePSO.pRootSignature = mComputeRootSignature.Get();
+	computePSO.CS =
+	{
+		reinterpret_cast<BYTE*>(mcsByteCode->GetBufferPointer()), 
+		mcsByteCode->GetBufferSize()
+	};
+	computePSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	ThrowIfFailed(md3dDevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&mPSO["compute"])));
+	
 }
 
 void App::OnMouseDown(WPARAM btnState, int x, int y)

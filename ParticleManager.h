@@ -26,19 +26,22 @@ public:
 	~ParticleManager();
 
 	void Update(XMMATRIX&, float, ID3D12GraphicsCommandList* commandList, Microsoft::WRL::ComPtr<ID3D12Device> &);
-	void Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device);
+	void Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device, ComPtr<ID3D12PipelineState>);
 
 	MeshGeometry *mGeo = nullptr;
 	MeshGeometry GetMeshGeo() { return *mGeo; };
 
 	int theOffset;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> mOutputBuffer;
+
 private:
 	UINT indexOffset;
 	UINT vertexOffset;
 	UINT indexCount;
 
 	unsigned long long totalVertexCount;
-	static const int numberOfParticles = 1024;
+	static const int numberOfParticles = 32;
 
 	std::vector<ParticleInfromation*> mParticles;
 	GeometryGenerator generator;
@@ -46,13 +49,13 @@ private:
 	Vertex vert[numberOfParticles];
 
 	//Constants for the particles mesh
-	const float width = 0.03f;
-	const float depth = 0.03f;
+	const float width = 0.004f;
+	const float depth = 0.004f;
 	const UINT32 rows = 2;
 	const UINT32 columns = 2;
 
 	//The smaller this is the faster it'll go
-	const float speed = 10.0f;
+	const float speed = 100.0f;
 	const float maxAcceleration = 10.0f;
 
 	time_t mTime;
@@ -64,4 +67,11 @@ private:
 	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList *commandList);
 	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
 	void ParticleReset(int);
+
+	std::vector<ComputeData*> particleInputeData;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBuffer;
+
+	//Microsoft::WRL::ComPtr<ID3D12Resource> mOutputBuffer;
 };
