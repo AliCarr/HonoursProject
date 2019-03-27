@@ -38,6 +38,7 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, I
 		nullptr, 
 		IID_PPV_ARGS(&mOutputBuffer)));
 
+	//assert(mOutputBuffer == NULL);
 
 }
 
@@ -68,6 +69,8 @@ void ParticleManager::Update(XMMATRIX& mat, float time, ID3D12GraphicsCommandLis
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
 	}
 
+	//assert(mOutputBuffer == NULL);
+	//assert(mOutputBuffer->GetGPUVirtualAddress() == NULL);
 
 	commandList->SetComputeRootShaderResourceView(0, mInputBuffer->GetGPUVirtualAddress());
 	commandList->SetComputeRootUnorderedAccessView(1, mOutputBuffer->GetGPUVirtualAddress());
@@ -80,9 +83,6 @@ void ParticleManager::Update(XMMATRIX& mat, float time, ID3D12GraphicsCommandLis
 	//commandList->CopyResource(mInputUploadBuffer.Get(), mOutputBuffer.Get());
 
 	mOutputBuffer->Map(0, nullptr, reinterpret_cast<void**>(&particleInputeData));
-
-
-	
 }
 
 void ParticleManager::Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device, ComPtr<ID3D12PipelineState> pso)
@@ -104,8 +104,6 @@ void ParticleManager::Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D
 	}
 
 	//commandList->SetPipelineState(pso.Get());
-
-
 }
 
 XMFLOAT3 ParticleManager::StartingVelocity()

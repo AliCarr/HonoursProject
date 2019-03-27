@@ -102,7 +102,7 @@ protected:
     UINT64 mCurrentFence = 0;
 	
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc, uiCmdListAlloc;
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc, uiCmdListAlloc, mComputeCmdListAlloc;
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>  mUIList;
 	ID3D12GraphicsCommandList* mCommandList;
 

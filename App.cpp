@@ -62,9 +62,10 @@ bool App::Initialize()
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
 	BuildPSO();
-
+	
 	//Setting pointer for the Particle Manager has to be done here, so that set up has been done
 	pManager = new ParticleManager(md3dDevice, mCommandList, mBoxGeo);
+	BuildBuffers();
 	/*mUI = new UI();
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mImGUIHeap.Get());*/
 	ThrowIfFailed(mCommandList->Close());
@@ -87,11 +88,7 @@ void App::Update(const GameTimer& gt)
 
 	ObjectConstants objConstants;
 
-	
-
 //	mCommandList->SetComputeRootSignature(mRootSignature.Get());
-
-	
 
 	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
 
@@ -106,7 +103,7 @@ void App::Draw(const GameTimer& gt)
 {
 	//Reset the command list and allocator to reuse the memory
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO["renderPSO"].Get()));
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO["render"].Get()));
 	//mUI->GUIUpdate();
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
@@ -118,21 +115,26 @@ void App::Draw(const GameTimer& gt)
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-		mCommandList->SetPipelineState(mPSO["compute"].Get());
-		mCommandList->SetGraphicsRootSignature(mComputeRootSignature.Get());
-		pManager->Update(mControl->mCamera->GetWorld(), gt.DeltaTime(), mCommandList, md3dDevice);
-	mCommandList->ResourceBarrier(1, &barrier);
+		/*mCommandList->SetPipelineState(mPSO["compute"].Get());*/
+		//mCommandList->SetGraphicsRootSignature(mComputeRootSignature.Get());
+
+
+		//mCommandList->SetComputeRootShaderResourceView(0, mInputBuffer->GetGPUVirtualAddress());
+		//pManager->Update(mControl->mCamera->GetWorld(), gt.DeltaTime(), mCommandList, md3dDevice);
+
+
+	/*mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());*/
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get()/*, mImGUIHeap.Get()*/ };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	
 
-	mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
+	//mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
 	//mCommandList->SetDescriptorHeaps(2, &mImGUIHeap);
@@ -156,6 +158,21 @@ void App::Draw(const GameTimer& gt)
 
 	//FlushCommandQueue();
 	mCommandQueue->Signal(mFence.Get(), mCurrentFence);
+
+
+
+
+
+	//Reset the command list and allocator to reuse the memory
+	ThrowIfFailed(mComputeCmdListAlloc->Reset());
+	ThrowIfFailed(mCommandList->Reset(mComputeCmdListAlloc.Get(), mPSO["compute"].Get()));
+
+	mCommandList->SetGraphicsRootSignature(mComputeRootSignature.Get());
+
+
+	mCommandList->SetComputeRootShaderResourceView(0, mInputBuffer->GetGPUVirtualAddress());
+	pManager->Update(mControl->mCamera->GetWorld(), gt.DeltaTime(), mCommandList, md3dDevice);
+
 }
 
 void App::BuildDescriptorHeaps()
@@ -234,7 +251,7 @@ void App::BuildRootSignature()
 	slotRootParameterCompute[1].InitAsUnorderedAccessView(0);
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDescCompute(3, slotRootParameterCompute,
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDescCompute(2, slotRootParameterCompute,
 		0, nullptr,
 		D3D12_ROOT_SIGNATURE_FLAG_NONE);
 
@@ -339,4 +356,41 @@ void App::OnKeyboardInput(const GameTimer& gt)
 	mControl->OnKeyboardInput(gt.DeltaTime());
 }
 
+void App::BuildBuffers()
+{
+	// Generate some data.
+	std::vector<ComputeData*> particleInputeData(1);
 
+	for (int i = 0; i < 1; ++i)
+	{
+		auto data = new ComputeData();
+
+		data->initialPosition = pManager->getPar(i)->position;
+		data->position = pManager->getPar(i)->position;
+		data->velocity = pManager->getPar(i)->velocity;
+
+		particleInputeData.push_back(std::move(data));
+	}
+
+	UINT64 byteSize = particleInputeData.size() * sizeof(ComputeData);
+
+	// Create some buffers to be used as SRVs.
+	mInputBuffer = d3dUtil::CreateDefaultBuffer(
+		md3dDevice.Get(),
+		mCommandList,
+		particleInputeData.data(),
+		byteSize,
+		mInputUploadBuffer);
+
+
+	//// Create the buffer that will be a UAV.
+	//ThrowIfFailed(md3dDevice->CreateCommittedResource(
+	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+	//	D3D12_HEAP_FLAG_NONE,
+	//	&CD3DX12_RESOURCE_DESC::Buffer(byteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+	//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+	//	nullptr,
+	//	IID_PPV_ARGS(&mOutputBuffer)));
+
+
+}

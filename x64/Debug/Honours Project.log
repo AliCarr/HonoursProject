@@ -1,6 +1,3 @@
-﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Box.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Box.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   App.cpp
-  ParticleManager.cpp
-c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(96): warning C4244: 'argument': conversion from 'const float' to 'GeometryGenerator::uint32', possible loss of data
-  Generating Code...
-  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\x64\Debug\Honours Project.exe
+  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Debug\Honours Project.exe

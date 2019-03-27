@@ -33,7 +33,8 @@ public:
 
 	int theOffset;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> mOutputBuffer;
+	ComPtr<ID3D12Resource> mOutputBuffer = nullptr;
+	ParticleInfromation* getPar(int c) { return mParticles.at(c); };
 
 private:
 	UINT indexOffset;
@@ -70,8 +71,8 @@ private:
 
 	std::vector<ComputeData*> particleInputeData;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBuffer;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBuffer = nullptr;
 
 	//Microsoft::WRL::ComPtr<ID3D12Resource> mOutputBuffer;
 };

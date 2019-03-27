@@ -1,3 +1,5 @@
-﻿  ParticleManager.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(143): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+﻿  App.cpp
+  ParticleManager.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(153): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+  Generating Code...
   Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

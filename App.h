@@ -34,7 +34,7 @@ private:
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
-
+	void BuildBuffers();
 
 private:
 
@@ -66,4 +66,8 @@ private:
 	Controls *mControl;
 	ParticleManager* pManager;
 	UI *mUI;
+
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBuffer = nullptr;
 };
