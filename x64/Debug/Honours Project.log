@@ -1,3 +1,11 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Box.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   App.cpp
+  Controls.cpp
+  GPUParticleManager.cpp
+  ModelLoader.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\modelloader.cpp(42): warning C4267: 'argument': conversion from 'size_t' to 'GeometryGenerator::uint32', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\modelloader.cpp(102): warning C4267: 'argument': conversion from 'size_t' to 'GeometryGenerator::uint32', possible loss of data
+  ParticleManager.cpp
+  UI.cpp
+  Generating Code...
   Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Debug\Honours Project.exe

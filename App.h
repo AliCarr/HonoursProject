@@ -7,6 +7,7 @@
 #include "Controls.h"
 #include "Common/Camera.h"
 #include "UI.h"
+#include "GPUParticleManager.h"
 
 
 class App : public D3DApp
@@ -66,8 +67,16 @@ private:
 	Controls *mControl;
 	ParticleManager* pManager;
 	UI *mUI;
+	GPUParticleManager* gpuPar;
+
+	//Microsoft::WRL::ComPtr<ID3D12Resource> mInputBuffer = nullptr;
+	//Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBuffer = nullptr;
 
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBuffer = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBufferA = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferB = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBufferB = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mOutputBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mReadBackBuffer = nullptr;
 };

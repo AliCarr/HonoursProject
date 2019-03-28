@@ -153,6 +153,7 @@
     <ClCompile Include="Common\MathHelper.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Controls.cpp" />
+    <ClCompile Include="GPUParticleManager.cpp" />
     <ClCompile Include="imgui-master\imgui.cpp" />
     <ClCompile Include="imgui-master\imgui_demo.cpp" />
     <ClCompile Include="imgui-master\imgui_draw.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="Common\UploadBuffer.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="Controls.h" />
+    <ClInclude Include="GPUParticleManager.h" />
     <ClInclude Include="imgui-master\imconfig.h" />
     <ClInclude Include="imgui-master\imgui.h" />
     <ClInclude Include="imgui-master\imgui_impl_dx12.h" />

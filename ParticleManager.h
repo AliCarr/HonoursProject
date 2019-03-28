@@ -4,20 +4,6 @@
 #include <stdio.h>
 #include <time.h>
 
-struct ParticleInfromation
-{
-	//A unit of mesurement for the particles life
-	float energy;
-	float accelertaion;
-
-	XMFLOAT3 position;
-	//XMFLOAT3 colour;
-	XMFLOAT3 velocity;
-	
-	bool isActive;
-	MeshGeometry* geo = nullptr;
-	std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
-};
 
 class ParticleManager
 {
@@ -25,8 +11,8 @@ public:
 	ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>&);
 	~ParticleManager();
 
-	void Update(XMMATRIX&, float, ID3D12GraphicsCommandList* commandList, Microsoft::WRL::ComPtr<ID3D12Device> &);
-	void Render(ID3D12GraphicsCommandList *commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &device, ComPtr<ID3D12PipelineState>);
+	void Update( float, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, Microsoft::WRL::ComPtr<ID3D12Device> &);
+	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12DescriptorHeap>&, UINT, Microsoft::WRL::ComPtr<ID3D12Device> &);
 
 	MeshGeometry *mGeo = nullptr;
 	MeshGeometry GetMeshGeo() { return *mGeo; };
@@ -35,6 +21,7 @@ public:
 
 	ComPtr<ID3D12Resource> mOutputBuffer = nullptr;
 	ParticleInfromation* getPar(int c) { return mParticles.at(c); };
+    int GetNumberOfParticles(){ return numberOfParticles; };
 
 private:
 	UINT indexOffset;
@@ -42,7 +29,7 @@ private:
 	UINT indexCount;
 
 	unsigned long long totalVertexCount;
-	static const int numberOfParticles = 32;
+	static const int numberOfParticles = 1000;
 
 	std::vector<ParticleInfromation*> mParticles;
 	GeometryGenerator generator;
