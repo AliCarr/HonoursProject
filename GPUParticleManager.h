@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include <time.h>
+
 //struct ParticleInfromation
 //{
 //	//A unit of mesurement for the particles life
@@ -26,7 +27,7 @@ public:
 	void initialise();
 	void update();
 	void render();
-
+	void Execute();
 
 
 private:
@@ -44,6 +45,8 @@ private:
 	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList *commandList);
 	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
 	void ParticleReset(int);
+	void BuildResources();
+	void BuildDescriptors();
 
 	unsigned long long totalVertexCount;
 	static const int numberOfParticles = 1000;
@@ -57,7 +60,7 @@ private:
 	const UINT32 rows = 2;
 	const UINT32 columns = 2;
 	std::vector<ComputeData*> particleInputeData;
-	ComPtr<ID3D12Resource> m_particleBuffer0Upload;
+	
 	ComPtr<ID3D12DescriptorHeap> m_srvUavHeap;
 
 	XMFLOAT3 StartingVelocity();
@@ -65,18 +68,11 @@ private:
 	UINT m_srvUavDescriptorSize;
 	ComPtr<ID3D12Resource> m_particleBufferForDraw;
 
-	enum DescriptorHeapIndex : UINT32
-	{
-		UavParticlePosVelo0,
-		UavParticlePosVelo1,
-		SrvParticlePosVelo0,
-		SrvParticlePosVelo1,
-		SrvParticleForDraw,
-		DescriptorCount
-	};
-
-	ComPtr<ID3D12Resource> m_particleBuffer0;
+	ComPtr<ID3D12Resource> inputParticleBuffer;
+	ComPtr<ID3D12Resource> outputParticleBuffer;
 
 	ComPtr<ID3D12RootSignature> m_rootSignature;
+
+	Microsoft::WRL::ComPtr<ID3D12Device> md3ddevice;
 };
 

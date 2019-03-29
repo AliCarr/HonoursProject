@@ -135,12 +135,12 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-	mCommandList->SetPipelineState(mPSO["compute"].Get());
-	mCommandList->SetGraphicsRootSignature(mComputeRootSignature.Get());
+	//mCommandList->SetPipelineState(mPSO["compute"].Get());
+	//mCommandList->SetGraphicsRootSignature(mComputeRootSignature.Get());
 
-	mCommandList->SetComputeRootShaderResourceView(0, mInputBufferA->GetGPUVirtualAddress());
-	mCommandList->SetComputeRootShaderResourceView(1, mInputBufferB->GetGPUVirtualAddress());
-	mCommandList->SetComputeRootUnorderedAccessView(2, mOutputBuffer->GetGPUVirtualAddress());
+	//mCommandList->SetComputeRootShaderResourceView(0, mInputBufferA->GetGPUVirtualAddress());
+	//mCommandList->SetComputeRootShaderResourceView(1, mInputBufferB->GetGPUVirtualAddress());
+	//mCommandList->SetComputeRootUnorderedAccessView(2, mOutputBuffer->GetGPUVirtualAddress());
 
 	// Done recording commands.
 	ThrowIfFailed(mCommandList->Close());
