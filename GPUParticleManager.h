@@ -28,7 +28,9 @@ public:
 	void update();
 	void render();
 	void Execute();
-
+	void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
+		CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
+		UINT descriptorSize);
 
 private:
 	time_t mTime;
@@ -46,7 +48,9 @@ private:
 	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
 	void ParticleReset(int);
 	void BuildResources();
-	void BuildDescriptors();
+	//void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
+	//	CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
+	//	UINT descriptorSize);
 
 	unsigned long long totalVertexCount;
 	static const int numberOfParticles = 1000;
@@ -74,5 +78,10 @@ private:
 	ComPtr<ID3D12RootSignature> m_rootSignature;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> md3ddevice;
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuSrv;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuUav;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuSrv;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuUav;
 };
 

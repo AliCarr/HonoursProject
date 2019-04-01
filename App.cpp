@@ -57,6 +57,10 @@ bool App::Initialize()
 	// Reset the command list to prep for initialization commands.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
+
+	
+
+
 	BuildDescriptorHeaps();
 	BuildConstantBuffers();
 	BuildRootSignature();
@@ -68,11 +72,22 @@ bool App::Initialize()
 								   mCommandList.Get(), 
 								   mBoxGeo);
 
-	//gpuPar = new GPUParticleManager(md3dDevice,
-	//	mCommandList.Get(),
-	//	mBoxGeo);
+	gpuPar = new GPUParticleManager(md3dDevice,
+		mCommandList.Get(),
+		mBoxGeo);
 
-	BuildBuffers();
+	auto mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	auto srvCpuStart = mCbvHeap->GetCPUDescriptorHandleForHeapStart();
+	auto srvGpuStart = mCbvHeap->GetGPUDescriptorHandleForHeapStart();
+
+	gpuPar->BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, 11, mCbvSrvDescriptorSize),
+		CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, 11, mCbvSrvDescriptorSize),
+		mCbvSrvDescriptorSize);
+
+	//BuildBuffers();
+
+
 
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -149,6 +164,7 @@ void App::Draw(const GameTimer& gt)
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
+	//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 	// swap the back and front buffers
 	ThrowIfFailed(mSwapChain->Present(0, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
@@ -162,18 +178,23 @@ void App::Draw(const GameTimer& gt)
 
 void App::BuildDescriptorHeaps()
 {
-	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
-		cbvHeapDesc.NumDescriptors = 11;
+
+	
+	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
+		cbvHeapDesc.NumDescriptors = 13; //Originally 11, we're adding 2 more
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
 
-	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	desc.NumDescriptors = 1;
-	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	ThrowIfFailed (md3dDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mImGUIHeap)) != S_OK)
+
+	//D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+	//desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	//desc.NumDescriptors = 1;
+	//desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	//ThrowIfFailed (md3dDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mImGUIHeap)) != S_OK)
+
+	
 	
 }
 
@@ -229,12 +250,11 @@ void App::BuildRootSignature()
 		IID_PPV_ARGS(&mRootSignature)));
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[3];
+	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[2];
 
 	// Perfomance TIP: Order from most frequent to least frequent.
 	computeSlotRootParameter[0].InitAsShaderResourceView(0);
-	computeSlotRootParameter[1].InitAsShaderResourceView(1);
-	computeSlotRootParameter[2].InitAsUnorderedAccessView(0);
+	computeSlotRootParameter[1].InitAsUnorderedAccessView(0);
 
 	// A root signature is an array of root parameters.
 	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(3, computeSlotRootParameter,
