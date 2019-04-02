@@ -168,23 +168,40 @@ void GPUParticleManager::BuildResources()
 
 void GPUParticleManager::BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
 	CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
-	UINT descriptorSize)
+	UINT descriptorSize, ComPtr<ID3D12DescriptorHeap> &heap)
 {
 	mhCpuSrv = hCpuDescriptor;
 	mhCpuUav = hCpuDescriptor.Offset(1, descriptorSize);
 	mhGpuSrv = hGpuDescriptor;
 	mhGpuUav = hGpuDescriptor.Offset(1, descriptorSize);
 
+
+	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = numberOfParticles;
+	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
+
+	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.NumElements = 1;
+	uavDesc.Buffer.FirstElement = 0;
+	uavDesc.Buffer.NumElements = numberOfParticles;
+	uavDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-	md3ddevice->CreateShaderResourceView(inputParticleBuffer.Get(), &srvDesc, hCpuDescriptor);
-	md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, hCpuDescriptor.Offset(1, descriptorSize));
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(heap->GetCPUDescriptorHandleForHeapStart(), 0, m_srvUavDescriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), 2, m_srvUavDescriptorSize);
+
+	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
+	md3ddevice->CreateShaderResourceView(inputParticleBuffer.Get(), &srvDesc, srvHandle);
+	md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle);
+
+	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 }

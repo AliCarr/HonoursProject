@@ -76,18 +76,20 @@ bool App::Initialize()
 		mCommandList.Get(),
 		mBoxGeo);
 
-	auto mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 
-	auto srvCpuStart = mCbvHeap->GetCPUDescriptorHandleForHeapStart();
-	auto srvGpuStart = mCbvHeap->GetGPUDescriptorHandleForHeapStart();
+	//auto mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	gpuPar->BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, 11, mCbvSrvDescriptorSize),
-		CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, 11, mCbvSrvDescriptorSize),
-		mCbvSrvDescriptorSize);
+	auto srvCpuStart = mComputeHeap->GetCPUDescriptorHandleForHeapStart();
+	auto srvGpuStart = mComputeHeap->GetGPUDescriptorHandleForHeapStart();
+
+	gpuPar->BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, 0, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
+					         CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, 0, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
+							 md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), mComputeHeap);
 
 	//BuildBuffers();
 
-
+	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -106,6 +108,7 @@ void App::Update(const GameTimer& gt)
 {
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
+	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 	pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice);
 
 	ObjectConstants objConstants;
@@ -118,6 +121,7 @@ void App::Update(const GameTimer& gt)
 void App::Draw(const GameTimer& gt)
 {
 	// Reuse the memory associated with command recording.
+	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 	// We can only reset when the associated command lists have finished execution on the GPU.
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
@@ -129,34 +133,32 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
 	// Indicate a state transition on the resource usage.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = CurrentBackBuffer();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-	// Clear the back buffer and depth buffer.
+	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	// Specify the buffers we are going to render to.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
-	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get()};
+	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
 
 	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
 	// Indicate a state transition on the resource usage.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-
-	//mCommandList->SetPipelineState(mPSO["compute"].Get());
-	//mCommandList->SetGraphicsRootSignature(mComputeRootSignature.Get());
-
-	//mCommandList->SetComputeRootShaderResourceView(0, mInputBufferA->GetGPUVirtualAddress());
-	//mCommandList->SetComputeRootShaderResourceView(1, mInputBufferB->GetGPUVirtualAddress());
-	//mCommandList->SetComputeRootUnorderedAccessView(2, mOutputBuffer->GetGPUVirtualAddress());
-
+	mCommandList->ResourceBarrier(1, &barrier);
+	mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
+	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 	// Done recording commands.
 	ThrowIfFailed(mCommandList->Close());
 
@@ -164,7 +166,8 @@ void App::Draw(const GameTimer& gt)
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
+	assert(mSwapChain);
+	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 	// swap the back and front buffers
 	ThrowIfFailed(mSwapChain->Present(0, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
@@ -178,24 +181,24 @@ void App::Draw(const GameTimer& gt)
 
 void App::BuildDescriptorHeaps()
 {
-
-	
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-		cbvHeapDesc.NumDescriptors = 13; //Originally 11, we're adding 2 more
+		cbvHeapDesc.NumDescriptors = 11; //Originally 11, we're adding 2 more
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
+	mCbvHeap->SetName(L"Constant Buffer Heap");
 
 
-	//D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-	//desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	//desc.NumDescriptors = 1;
-	//desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	//ThrowIfFailed (md3dDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mImGUIHeap)) != S_OK)
-
+	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
+	computeHeapDesc.NumDescriptors = 3;
+	computeHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	computeHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	computeHeapDesc.NodeMask = 0;
 	
-	
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&computeHeapDesc, IID_PPV_ARGS(&mComputeHeap)));
+	mComputeHeap->SetName(L"Compute Heap");
+
 }
 
 void App::BuildConstantBuffers()
@@ -252,12 +255,20 @@ void App::BuildRootSignature()
 	// Root parameter can be a table, root descriptor or root constants.
 	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[2];
 
+	CD3DX12_DESCRIPTOR_RANGE ranges[2];
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+
+
 	// Perfomance TIP: Order from most frequent to least frequent.
-	computeSlotRootParameter[0].InitAsShaderResourceView(0);
-	computeSlotRootParameter[1].InitAsUnorderedAccessView(0);
+	//computeSlotRootParameter[0].InitAsShaderResourceView(0);
+	//computeSlotRootParameter[1].InitAsUnorderedAccessView(0);
+	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(3, computeSlotRootParameter,
+	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(2, computeSlotRootParameter,
 		0, nullptr,
 		D3D12_ROOT_SIGNATURE_FLAG_NONE);
 

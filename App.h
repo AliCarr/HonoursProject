@@ -43,6 +43,7 @@ private:
 	ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
 	ComPtr<ID3D12RootSignature> mImGuiRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
+	ComPtr<ID3D12DescriptorHeap> mComputeHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mImGUIHeap = nullptr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;

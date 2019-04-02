@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include "stdafx.h"
 #include <time.h>
@@ -30,7 +31,7 @@ public:
 	void Execute();
 	void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
 		CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
-		UINT descriptorSize);
+		UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&);
 
 private:
 	time_t mTime;
@@ -84,4 +85,3 @@ private:
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuSrv;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuUav;
 };
-
