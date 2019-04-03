@@ -31,7 +31,7 @@ public:
 	void Execute();
 	void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
 		CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
-		UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&);
+		UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 
 private:
 	time_t mTime;
@@ -75,11 +75,12 @@ private:
 
 	ComPtr<ID3D12Resource> inputParticleBuffer;
 	ComPtr<ID3D12Resource> outputParticleBuffer;
+	ComPtr<ID3D12Resource> uploadParticleBuffer;
 
 	ComPtr<ID3D12RootSignature> m_rootSignature;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> md3ddevice;
-
+	ID3D12GraphicsCommandList* list;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuSrv;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuUav;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuSrv;

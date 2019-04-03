@@ -30,7 +30,6 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 	CreateBuffers(device, commandList);
 
 	md3ddevice = device;
-
 	BuildResources();
 }
 
@@ -147,12 +146,13 @@ void GPUParticleManager::BuildResources()
 	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; //used for buffers as texture data can be located in them without creating a texture object
 	bufferDesc.SampleDesc.Count = 1;
 
+	D3D12_RESOURCE_DESC uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(numberOfParticles * sizeof(ComputeData));
 	//Create the input buffer using the descriptor above
 	md3ddevice->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&bufferDesc,
-		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&inputParticleBuffer));
 
@@ -161,48 +161,64 @@ void GPUParticleManager::BuildResources()
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&bufferDesc,
-		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&outputParticleBuffer));
+
+	//Create the upload buffer that will handle the data being copied to the above buffers
+	md3ddevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&uploadBufferDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&uploadParticleBuffer));
 }
 
 void GPUParticleManager::BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
 	CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
-	UINT descriptorSize, ComPtr<ID3D12DescriptorHeap> &heap)
+	UINT descriptorSize, ComPtr<ID3D12DescriptorHeap> &heap, ID3D12GraphicsCommandList* list)
 {
 	mhCpuSrv = hCpuDescriptor;
 	mhCpuUav = hCpuDescriptor.Offset(1, descriptorSize);
 	mhGpuSrv = hGpuDescriptor;
 	mhGpuUav = hGpuDescriptor.Offset(1, descriptorSize);
 
+	D3D12_SUBRESOURCE_DATA particleDataSub = {};
+	particleDataSub.pData = reinterpret_cast<UINT*>(&particleInputeData);
+	particleDataSub.RowPitch = numberOfParticles * sizeof(ComputeData);
+	particleDataSub.SlicePitch = sizeof(particleDataSub);
+
+	UpdateSubresources<1>(list, inputParticleBuffer.Get(), uploadParticleBuffer.Get(), 0, 0, 1, &particleDataSub);
+	list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
 	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = numberOfParticles;
-	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = numberOfParticles;
+		srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 
 	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.FirstElement = 0;
-	uavDesc.Buffer.NumElements = numberOfParticles;
-	uavDesc.Buffer.StructureByteStride = sizeof(ComputeData);
-	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = numberOfParticles;
+		uavDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 	m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(heap->GetCPUDescriptorHandleForHeapStart(), 0U, m_srvUavDescriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), 0U, m_srvUavDescriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), 1U, m_srvUavDescriptorSize);
 	
 	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	md3ddevice->CreateShaderResourceView(inputParticleBuffer.Get(), &srvDesc, srvHandle);
-	md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle.Offset(1U, m_srvUavDescriptorSize));
-
+	md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle);
+	
 	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 }
