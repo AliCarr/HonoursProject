@@ -5,7 +5,7 @@ struct ComputeData
 	float3 velocity;
 	float3 initialPosition;
 };
-//
+
 StructuredBuffer<ComputeData>	gInput	:	register(t0);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
 
