@@ -195,13 +195,14 @@ void GPUParticleManager::BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDesc
 	uavDesc.Buffer.NumElements = numberOfParticles;
 	uavDesc.Buffer.StructureByteStride = sizeof(ComputeData);
 	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+	m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(heap->GetCPUDescriptorHandleForHeapStart(), 0, m_srvUavDescriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), 0, m_srvUavDescriptorSize);
-
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(heap->GetCPUDescriptorHandleForHeapStart(), 0U, m_srvUavDescriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), 0U, m_srvUavDescriptorSize);
+	
 	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	md3ddevice->CreateShaderResourceView(inputParticleBuffer.Get(), &srvDesc, srvHandle);
-	md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle);
+	md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle.Offset(1U, m_srvUavDescriptorSize));
 
 	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 }
