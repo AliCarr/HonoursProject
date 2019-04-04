@@ -126,8 +126,27 @@ void GPUParticleManager::CreateRootSignatures(Microsoft::WRL::ComPtr<ID3D12Devic
 
 }
 
-void GPUParticleManager::Execute()
+void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12RootSignature> rootSig, ComPtr<ID3D12DescriptorHeap> &heap)
 {
+	list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(outputParticleBuffer.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+	//Set pso
+	list->SetPipelineState(pso.Get());
+	//set root signature 
+	list->SetComputeRootSignature(rootSig.Get());
+	
+	//Set heaps
+	ID3D12DescriptorHeap* ppHeaps[] = { heap.Get() };
+	list->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), 0U, m_srvUavDescriptorSize);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), 1U, m_srvUavDescriptorSize);
+
+	//set compute root descriptor table
+	list->SetComputeRootDescriptorTable(0U, srvHandle);
+	list->SetComputeRootDescriptorTable(1U, uavHandle);
+
+	list->Dispatch(1000, 1, 1);
 
 }
 
@@ -185,7 +204,8 @@ void GPUParticleManager::BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDesc
 	mhGpuUav = hGpuDescriptor.Offset(1, descriptorSize);
 
 	D3D12_SUBRESOURCE_DATA particleDataSub = {};
-	particleDataSub.pData = reinterpret_cast<UINT*>(&particleInputeData);
+	//particleDataSub.pData = reinterpret_cast<UINT*>(&particleInputeData);
+	particleDataSub.pData = &particleInputeData;
 	particleDataSub.RowPitch = numberOfParticles * sizeof(ComputeData);
 	particleDataSub.SlicePitch = sizeof(particleDataSub);
 

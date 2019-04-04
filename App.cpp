@@ -159,6 +159,9 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+	
+	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], mComputeRootSignature, mComputeHeap);
+	
 	// Done recording commands.
 	ThrowIfFailed(mCommandList->Close());
 

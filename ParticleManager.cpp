@@ -19,13 +19,13 @@ ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, I
 		par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
 		mParticles.push_back(std::move(par));
 
-		/*auto data = new ComputeData();
+		auto data = new ComputeData();
 
 		data->initialPosition = par->position;
 		data->position = par->position;
 		data->velocity = par->velocity;
 
-		particleInputeData.push_back(std::move(data));*/
+		particleInputeData.push_back(std::move(data));
  	}
 
 	/*UINT64	byteSize = particleInputeData.size() * sizeof(ComputeData);

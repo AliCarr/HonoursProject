@@ -28,7 +28,7 @@ public:
 	void initialise();
 	void update();
 	void render();
-	void Execute();
+	void Execute(ID3D12GraphicsCommandList*, ComPtr<ID3D12PipelineState>, ComPtr<ID3D12RootSignature>, ComPtr<ID3D12DescriptorHeap>&);
 	void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
 		CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
 		UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
