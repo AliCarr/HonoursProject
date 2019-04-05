@@ -1,4 +1,1 @@
-﻿  GPUParticleManager.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(158): warning C4996: 'memccpy': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _memccpy. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.16299.0\ucrt\corecrt_memory.h(79): note: see declaration of 'memccpy'
-  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Debug\Honours Project.exe
+﻿  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Debug\Honours Project.exe

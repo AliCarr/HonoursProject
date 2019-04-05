@@ -158,7 +158,7 @@ void App::Draw(const GameTimer& gt)
 	// Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
-	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+	//mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 	
 	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], mComputeRootSignature, mComputeHeap);
 	

@@ -14,13 +14,11 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 {
 	int x = dispatchThreadID.x;
 	int y = dispatchThreadID.y;
+	
+	gOutput[dispatchThreadID.x].position.x  =      100;
+	gOutput[dispatchThreadID.x].velocity.x =       20;
+	gOutput[dispatchThreadID.x].initialPosition.x = 40;
 
-
-	gOutput[dispatchThreadID.x].position  = gInput[dispatchThreadID.x].position + gInput[dispatchThreadID.x].position + 10;
-	gOutput[dispatchThreadID.x].velocity = gInput[dispatchThreadID.x].position + gInput[dispatchThreadID.x].position + 10;
-	gOutput[dispatchThreadID.x].initialPosition = gInput[dispatchThreadID.x].position + gInput[dispatchThreadID.x].position + 10;
-
-	gInput[dispatchThreadID.x].position;
 	//gOutput[int2(x, y)].position.x += 100000.0f;
 
 	//gOutput[int2(x, y)] =
