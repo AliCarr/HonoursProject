@@ -11,6 +11,10 @@ public:
 	~UI();
 	void GUIInit(HWND, ID3D12Device*, ID3D12DescriptorHeap*);
 	void GUIUpdate();
-	void GUIRender();
+	void GUIRender(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>);
+
+
+private:
+	ComPtr<ID3D12DescriptorHeap> uiHeap = nullptr;
 };
 

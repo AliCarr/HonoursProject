@@ -6,7 +6,7 @@ struct ComputeData
 	float3 initialPosition;
 };
 
-StructuredBuffer<ComputeData>	gInput	:	register(t0);
+StructuredBuffer<ComputeData> gInput	:	register(t0);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
 
 [numthreads(1000, 1, 1)]
@@ -15,9 +15,9 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 	int x = dispatchThreadID.x;
 	int y = dispatchThreadID.y;
 	
-	gOutput[dispatchThreadID.x].position.x  =      100;
-	gOutput[dispatchThreadID.x].velocity.x =       20;
-	gOutput[dispatchThreadID.x].initialPosition.x = 40;
+	gOutput[dispatchThreadID.x].position = gInput[dispatchThreadID.x].position + 1;
+	gOutput[dispatchThreadID.x].velocity.x = gInput[dispatchThreadID.x].velocity.x;
+	gOutput[dispatchThreadID.x].initialPosition.x = gInput[dispatchThreadID.x].initialPosition.x;
 
 	//gOutput[int2(x, y)].position.x += 100000.0f;
 

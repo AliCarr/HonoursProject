@@ -88,6 +88,7 @@ bool App::Initialize()
 							 md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), mComputeHeap, mCommandList.Get());
 
 	//BuildBuffers();
+	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
 
 	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 
@@ -116,6 +117,8 @@ void App::Update(const GameTimer& gt)
 		objConstants.yPosiiton += gt.DeltaTime();
 		objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
 	mObjectCB->CopyData(0, objConstants);
+
+	mUI->GUIUpdate();
 }
 
 void App::Draw(const GameTimer& gt)
@@ -162,6 +165,8 @@ void App::Draw(const GameTimer& gt)
 	
 	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], mComputeRootSignature, mComputeHeap);
 	
+	mUI->GUIRender(mCommandList);
+
 	// Done recording commands.
 	ThrowIfFailed(mCommandList->Close());
 
@@ -192,7 +197,7 @@ void App::BuildDescriptorHeaps()
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
 	mCbvHeap->SetName(L"Constant Buffer Heap");
 
-	UINT descNumTotal = 2;
+	UINT descNumTotal = 2U;
 
 	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
 	computeHeapDesc.NumDescriptors = descNumTotal;
@@ -261,20 +266,15 @@ void App::BuildRootSignature()
 
 	CD3DX12_DESCRIPTOR_RANGE ranges[2];
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //Changes table number, but not element in table
 
-
-	// Perfomance TIP: Order from most frequent to least frequent.
-	//computeSlotRootParameter[0].InitAsShaderResourceView(0);
-	//computeSlotRootParameter[1].InitAsUnorderedAccessView(0);
 	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
 
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(2, computeSlotRootParameter,
-		0, nullptr,
-		D3D12_ROOT_SIGNATURE_FLAG_NONE);
+	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(_countof(computeSlotRootParameter), computeSlotRootParameter,
+		0, nullptr);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
 	ComPtr<ID3DBlob> computeSerializedRootSig = nullptr;
@@ -293,6 +293,8 @@ void App::BuildRootSignature()
 		computeSerializedRootSig->GetBufferPointer(),
 		computeSerializedRootSig->GetBufferSize(),
 		IID_PPV_ARGS(mComputeRootSignature.GetAddressOf())));
+
+	mComputeRootSignature->SetName(L"Compute Root Signature");
 }
 
 void App::BuildShadersAndInputLayout()
@@ -350,7 +352,7 @@ void App::BuildPSO()
 		reinterpret_cast<BYTE*>(mcsByteCode->GetBufferPointer()), 
 		mcsByteCode->GetBufferSize()
 	};
-	computePSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	//computePSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 	ThrowIfFailed(md3dDevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&mPSO["compute"])));
 	
 }
@@ -377,47 +379,47 @@ void App::OnKeyboardInput(const GameTimer& gt)
 
 void App::BuildBuffers()
 {
-	// Generate some data.
-	std::vector<ComputeData> dataA(pManager->GetNumberOfParticles());
-	std::vector<ComputeData> dataB(pManager->GetNumberOfParticles());
-	for (int i = 0; i < pManager->GetNumberOfParticles(); ++i)
-	{
-		dataA.at(i).initialPosition = { 0, 0, 0 };
-		dataA.at(i).position = { 0, 0, 0 };
-		dataA.at(i).velocity = { 0, 0, 0 };
-	}
+	//// Generate some data.
+	//std::vector<ComputeData> dataA(pManager->GetNumberOfParticles());
+	//std::vector<ComputeData> dataB(pManager->GetNumberOfParticles());
+	//for (int i = 0; i < pManager->GetNumberOfParticles(); ++i)
+	//{
+	//	dataA.at(i).initialPosition = { 0, 0, 0 };
+	//	dataA.at(i).position = { 0, 0, 0 };
+	//	dataA.at(i).velocity = { 0, 0, 0 };
+	//}
 
-	UINT64 byteSize = dataA.size() * sizeof(ComputeData);
+	//UINT64 byteSize = dataA.size() * sizeof(ComputeData);
 
-	// Create some buffers to be used as SRVs.
-	mInputBufferA = d3dUtil::CreateDefaultBuffer(
-		md3dDevice.Get(),
-		mCommandList.Get(),
-		dataA.data(),
-		byteSize,
-		mInputUploadBufferA);
+	//// Create some buffers to be used as SRVs.
+	//mInputBufferA = d3dUtil::CreateDefaultBuffer(
+	//	md3dDevice.Get(),
+	//	mCommandList.Get(),
+	//	dataA.data(),
+	//	byteSize,
+	//	mInputUploadBufferA);
 
-	mInputBufferB = d3dUtil::CreateDefaultBuffer(
-		md3dDevice.Get(),
-		mCommandList.Get(),
-		dataB.data(),
-		byteSize,
-		mInputUploadBufferB);
+	//mInputBufferB = d3dUtil::CreateDefaultBuffer(
+	//	md3dDevice.Get(),
+	//	mCommandList.Get(),
+	//	dataB.data(),
+	//	byteSize,
+	//	mInputUploadBufferB);
 
-	// Create the buffer that will be a UAV.
-	ThrowIfFailed(md3dDevice->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(byteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-		nullptr,
-		IID_PPV_ARGS(&mOutputBuffer)));
+	//// Create the buffer that will be a UAV.
+	//ThrowIfFailed(md3dDevice->CreateCommittedResource(
+	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+	//	D3D12_HEAP_FLAG_NONE,
+	//	&CD3DX12_RESOURCE_DESC::Buffer(byteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+	//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+	//	nullptr,
+	//	IID_PPV_ARGS(&mOutputBuffer)));
 
-	ThrowIfFailed(md3dDevice->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(byteSize),
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&mReadBackBuffer)));
+	//ThrowIfFailed(md3dDevice->CreateCommittedResource(
+	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+	//	D3D12_HEAP_FLAG_NONE,
+	//	&CD3DX12_RESOURCE_DESC::Buffer(byteSize),
+	//	D3D12_RESOURCE_STATE_COPY_DEST,
+	//	nullptr,
+	//	IID_PPV_ARGS(&mReadBackBuffer)));
 }
