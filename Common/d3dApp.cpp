@@ -4,6 +4,8 @@
 
 #include "d3dApp.h"
 #include <WindowsX.h>
+#include "\Users\Alastair Ross\Documents\GitHub\HonoursProject\UI.h"
+#include "\Users\Alastair Ross\Documents\GitHub\HonoursProject\imgui-master\imgui_impl_win32.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -228,6 +230,12 @@ void D3DApp::OnResize()
  
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+		return true;
+	
+
 	switch( msg )
 	{
 	// WM_ACTIVATE is sent when the window is activated or deactivated.  
