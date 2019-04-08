@@ -67,8 +67,3 @@ void Controls::OnResize(float ratio)
 	mCamera->Resize(ratio);
 	mCamera->SetLens(0.25f*MathHelper::Pi, ratio, 1.0f, 1000.0f);
 }
-//
-//Camera Controls::GetCamera()
-//{
-//	return mCamera;
-//}
