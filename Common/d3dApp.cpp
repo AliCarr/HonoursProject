@@ -4,8 +4,8 @@
 
 #include "d3dApp.h"
 #include <WindowsX.h>
-#include "\Users\Alastair Ross\Documents\GitHub\HonoursProject\UI.h"
-#include "\Users\Alastair Ross\Documents\GitHub\HonoursProject\imgui-master\imgui_impl_win32.h"
+//#include "\Users\Alastair Ross\Documents\GitHub\HonoursProject\UI.h"
+//#include "\Users\Alastair Ross\Documents\GitHub\HonoursProject\imgui-master\imgui_impl_win32.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;

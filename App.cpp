@@ -83,6 +83,8 @@ bool App::Initialize()
 	auto srvCpuStart = mComputeHeap->GetCPUDescriptorHandleForHeapStart();
 	auto srvGpuStart = mComputeHeap->GetGPUDescriptorHandleForHeapStart();
 
+	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
+
 	gpuPar->BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, 0, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
 					         CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, 0, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
 							 md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), mComputeHeap, mCommandList.Get());
@@ -197,7 +199,7 @@ void App::BuildDescriptorHeaps()
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
 	mCbvHeap->SetName(L"Constant Buffer Heap");
 
-	UINT descNumTotal = 2U;
+	UINT descNumTotal = 3U;
 
 	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
 	computeHeapDesc.NumDescriptors = descNumTotal;
@@ -262,18 +264,20 @@ void App::BuildRootSignature()
 		IID_PPV_ARGS(&mRootSignature)));
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[2];
+	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[3];
 
-	CD3DX12_DESCRIPTOR_RANGE ranges[2];
+	CD3DX12_DESCRIPTOR_RANGE ranges[3];
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //Changes table number, but not element in table
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //Changes table number, but not element in table
 
 	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
 
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(_countof(computeSlotRootParameter), computeSlotRootParameter,
+	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(3, computeSlotRootParameter,
 		0, nullptr);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -287,6 +291,8 @@ void App::BuildRootSignature()
 		::OutputDebugStringA((char*)computeErrorBlob->GetBufferPointer());
 	}
 	ThrowIfFailed(hr);
+
+	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 
 	ThrowIfFailed(md3dDevice->CreateRootSignature(
 		0,

@@ -54,7 +54,7 @@ private:
 	//	UINT descriptorSize);
 
 	unsigned long long totalVertexCount;
-	static const int numberOfParticles = 1000;
+	static const int numberOfParticles = 10;
 	MeshGeometry *mGeo = nullptr;
 	std::vector<ParticleInfromation*> mParticles;
 	GeometryGenerator generator;
@@ -64,7 +64,7 @@ private:
 	const float depth = 0.004f;
 	const UINT32 rows = 2;
 	const UINT32 columns = 2;
-	std::vector<ComputeData*> particleInputeData;
+	std::vector<ComputeData> particleInputeData;
 	
 	ComPtr<ID3D12DescriptorHeap> m_srvUavHeap;
 
@@ -74,6 +74,7 @@ private:
 	ComPtr<ID3D12Resource> m_particleBufferForDraw;
 
 	ComPtr<ID3D12Resource> inputParticleBuffer;
+	ComPtr<ID3D12Resource> inputParticleBuffer2;
 	ComPtr<ID3D12Resource> outputParticleBuffer;
 	ComPtr<ID3D12Resource> uploadParticleBuffer;
 
