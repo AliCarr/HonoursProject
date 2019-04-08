@@ -103,7 +103,7 @@
       <Filter>Source Files\Tools</Filter>
     </ClCompile>
     <ClCompile Include="GPUParticleManager.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Particle System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -177,7 +177,7 @@
       <Filter>Header Files\Tools</Filter>
     </ClInclude>
     <ClInclude Include="GPUParticleManager.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Particle System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
