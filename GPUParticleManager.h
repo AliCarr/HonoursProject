@@ -4,35 +4,19 @@
 #include "stdafx.h"
 #include <time.h>
 
-//struct ParticleInfromation
-//{
-//	//A unit of mesurement for the particles life
-//	float energy;
-//	float accelertaion;
-//
-//	XMFLOAT3 position;
-//	//XMFLOAT3 colour;
-//	XMFLOAT3 velocity;
-//
-//	bool isActive;
-//	MeshGeometry* geo = nullptr;
-//	std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
-//};
-
 class GPUParticleManager
 {
 public:
-	GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh);
+	GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &, ID3D12GraphicsCommandList* , std::unique_ptr<MeshGeometry>& , ComPtr<ID3D12DescriptorHeap> , ComPtr<ID3DBlob> , ComPtr<ID3D12PipelineState > &);
 	~GPUParticleManager();
 
 	void initialise();
 	void update();
 	void render();
 	void Execute(ID3D12GraphicsCommandList*, ComPtr<ID3D12PipelineState>, ComPtr<ID3D12RootSignature>, ComPtr<ID3D12DescriptorHeap>&);
-	void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
-		CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
-		UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
-
+	void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
+	ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
+	ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
 private:
 	time_t mTime;
 	UINT indexOffset;
@@ -43,12 +27,14 @@ private:
 	
 	
 	void CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
-	void CreateRootSignatures(Microsoft::WRL::ComPtr<ID3D12Device> &device);
 	
+
+	void CreateRootSignatures();
 	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList *commandList);
 	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
 	void ParticleReset(int);
 	void BuildResources();
+	void BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO);
 	//void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
 	//	CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
 	//	UINT descriptorSize);
@@ -86,6 +72,8 @@ private:
 	CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuUav;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuSrv;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuUav;
+
+	
 
 	const UINT SRV = 0U;
 	const UINT UAV = 1U;

@@ -172,6 +172,7 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 		v.Pos = mParticles.at(current)->position;
 		v.Color = XMFLOAT4(DirectX::Colors::White); 
 		v.texCoord = { 0.0f, 0.0f };
+		v.id = current;
 		buffer->CopyData(i, v);
 		mParticles.at(current)->velocity.x += 0.001f;
 		mParticles.at(current)->velocity.z += 0.001f;

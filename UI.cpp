@@ -37,6 +37,7 @@ void UI::GUIInit(HWND wnd, ID3D12Device* device, ID3D12DescriptorHeap *heap)
 	//Pulled from example, will likely not be used
 	bool show_demo_window = true;
 	bool show_another_window = false;
+
 }
 
 void UI::GUIUpdate()

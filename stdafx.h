@@ -19,6 +19,7 @@ struct Vertex
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT2 texCoord;
 	DirectX::XMFLOAT4 Color;
+	UINT id;
 };
 
 struct ObjectConstants

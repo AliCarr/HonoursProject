@@ -59,4 +59,6 @@ private: //Constants
 	SubmeshGeometry boxSubmesh;
 	Vertex vert[numberOfParticles];
 	time_t mTime;
+
+	//std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
 };

@@ -47,6 +47,19 @@ App::~App()
 		delete mUI;
 		mUI = 0;
 	}
+
+	if (gpuPar)
+	{
+		delete gpuPar;
+		gpuPar = 0;
+	}
+
+	if (mBoxGeo)
+	{
+		delete &mBoxGeo;
+		mBoxGeo = 0;
+
+	}	
 }
 
 bool App::Initialize()
@@ -54,49 +67,21 @@ bool App::Initialize()
 	if (!D3DApp::Initialize())
 		return false;
 
-	// Reset the command list to prep for initialization commands.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
-
-
-	
-
 
 	BuildDescriptorHeaps();
 	BuildConstantBuffers();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
 	BuildPSO();
-	
-	//Setting pointer for the Particle Manager has to be done here, so that set up has been done
-	pManager = new ParticleManager(md3dDevice, 
-								   mCommandList.Get(), 
-								   mBoxGeo);
 
-	gpuPar = new GPUParticleManager(md3dDevice,
-		mCommandList.Get(),
-		mBoxGeo);
-
-	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
-
-	//auto mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	auto srvCpuStart = mComputeHeap->GetCPUDescriptorHandleForHeapStart();
-	auto srvGpuStart = mComputeHeap->GetGPUDescriptorHandleForHeapStart();
-
-	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
-
-	gpuPar->BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE(srvCpuStart, 0, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
-					         CD3DX12_GPU_DESCRIPTOR_HANDLE(srvGpuStart, 0, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
-							 md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), mComputeHeap, mCommandList.Get());
-
-	//BuildBuffers();
+	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo);
+	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo, mComputeHeap, mcsByteCode, mPSO["compute"]);
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
-
-	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
 	return true;
 }
@@ -105,13 +90,14 @@ void App::OnResize()
 {
 	D3DApp::OnResize();
 	mControl->OnResize(AspectRatio());
+
 }
 
 void App::Update(const GameTimer& gt)
 {
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
-	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
+
 	pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice);
 
 	ObjectConstants objConstants;
@@ -126,7 +112,7 @@ void App::Update(const GameTimer& gt)
 void App::Draw(const GameTimer& gt)
 {
 	// Reuse the memory associated with command recording.
-	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
+	//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 	// We can only reset when the associated command lists have finished execution on the GPU.
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
@@ -139,12 +125,12 @@ void App::Draw(const GameTimer& gt)
 
 	// Indicate a state transition on the resource usage.
 	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = CurrentBackBuffer();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = CurrentBackBuffer();
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
@@ -156,16 +142,19 @@ void App::Draw(const GameTimer& gt)
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get()};
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap);
 
+	mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
+	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mComputeHeap->GetGPUDescriptorHandleForHeapStart(), 0U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	mCommandList->SetGraphicsRootDescriptorTable(0U, srvHandle);
 
 	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
 	// Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
-	//mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-	
-	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], mComputeRootSignature, mComputeHeap);
 	
 	mUI->GUIRender(mCommandList);
 
@@ -182,11 +171,7 @@ void App::Draw(const GameTimer& gt)
 	ThrowIfFailed(mSwapChain->Present(0, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
-	// Wait until frame commands are complete.  This waiting is inefficient and is
-	// done for simplicity.  Later we will show how to organize our rendering code
-	// so we do not have to wait per frame.
 	FlushCommandQueue();
-
 }
 
 void App::BuildDescriptorHeaps()
@@ -197,19 +182,15 @@ void App::BuildDescriptorHeaps()
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
-	mCbvHeap->SetName(L"Constant Buffer Heap");
-
-	UINT descNumTotal = 3U;
 
 	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
-	computeHeapDesc.NumDescriptors = descNumTotal;
-	computeHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	computeHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	//computeHeapDesc.NodeMask = 0;
-	
+		computeHeapDesc.NumDescriptors = 3U;
+		computeHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		computeHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&computeHeapDesc, IID_PPV_ARGS(&mComputeHeap)));
-	mComputeHeap->SetName(L"Compute Heap");
 
+	mCbvHeap->SetName(L"Constant Buffer Heap");
+	mComputeHeap->SetName(L"Compute Heap");
 }
 
 void App::BuildConstantBuffers()
@@ -238,8 +219,8 @@ void App::BuildRootSignature()
 
 	// Create a single descriptor table of CBVs.
 	CD3DX12_DESCRIPTOR_RANGE cbvTable;
-	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
+		cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 
 	// A root signature is an array of root parameters.
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr,
@@ -262,45 +243,6 @@ void App::BuildRootSignature()
 		serializedRootSig->GetBufferPointer(),
 		serializedRootSig->GetBufferSize(),
 		IID_PPV_ARGS(&mRootSignature)));
-
-	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[3];
-
-	CD3DX12_DESCRIPTOR_RANGE ranges[3];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //Changes table number, but not element in table
-
-	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
-	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
-	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
-
-
-	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(3, computeSlotRootParameter,
-		0, nullptr);
-
-	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
-	ComPtr<ID3DBlob> computeSerializedRootSig = nullptr;
-	ComPtr<ID3DBlob> computeErrorBlob = nullptr;
-	HRESULT computehr = D3D12SerializeRootSignature(&computeRootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-		computeSerializedRootSig.GetAddressOf(), computeErrorBlob.GetAddressOf());
-
-	if (computeErrorBlob != nullptr)
-	{
-		::OutputDebugStringA((char*)computeErrorBlob->GetBufferPointer());
-	}
-	ThrowIfFailed(hr);
-
-	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
-
-	ThrowIfFailed(md3dDevice->CreateRootSignature(
-		0,
-		computeSerializedRootSig->GetBufferPointer(),
-		computeSerializedRootSig->GetBufferSize(),
-		IID_PPV_ARGS(mComputeRootSignature.GetAddressOf())));
-
-	mComputeRootSignature->SetName(L"Compute Root Signature");
 }
 
 void App::BuildShadersAndInputLayout()
@@ -316,7 +258,8 @@ void App::BuildShadersAndInputLayout()
 		//Semantic Name, Semantic Index, Format, Input slot, Aligned Byte Offset, Input Slot Class, Instance Data Step Rate
 		{ "POSITION", 0,    DXGI_FORMAT_R32G32B32_FLOAT, 0,   0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "ID",		  0,		   DXGI_FORMAT_R16_UINT, 0,  36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 }
 
@@ -349,18 +292,6 @@ void App::BuildPSO()
 	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	psoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO["renderPSO"])));
-
-	D3D12_COMPUTE_PIPELINE_STATE_DESC computePSO = {};
-	//ZeroMemory(&computePSO, sizeof(D3D12_COMPUTE_PIPELINE_STATE_DESC));
-	computePSO.pRootSignature = mComputeRootSignature.Get();
-	computePSO.CS =
-	{
-		reinterpret_cast<BYTE*>(mcsByteCode->GetBufferPointer()), 
-		mcsByteCode->GetBufferSize()
-	};
-	//computePSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-	ThrowIfFailed(md3dDevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&mPSO["compute"])));
-	
 }
 
 void App::OnMouseDown(WPARAM btnState, int x, int y)
@@ -381,51 +312,4 @@ void App::OnMouseMove(WPARAM btnState, int x, int y)
 void App::OnKeyboardInput(const GameTimer& gt)
 {
 	mControl->OnKeyboardInput(gt.DeltaTime());
-}
-
-void App::BuildBuffers()
-{
-	//// Generate some data.
-	//std::vector<ComputeData> dataA(pManager->GetNumberOfParticles());
-	//std::vector<ComputeData> dataB(pManager->GetNumberOfParticles());
-	//for (int i = 0; i < pManager->GetNumberOfParticles(); ++i)
-	//{
-	//	dataA.at(i).initialPosition = { 0, 0, 0 };
-	//	dataA.at(i).position = { 0, 0, 0 };
-	//	dataA.at(i).velocity = { 0, 0, 0 };
-	//}
-
-	//UINT64 byteSize = dataA.size() * sizeof(ComputeData);
-
-	//// Create some buffers to be used as SRVs.
-	//mInputBufferA = d3dUtil::CreateDefaultBuffer(
-	//	md3dDevice.Get(),
-	//	mCommandList.Get(),
-	//	dataA.data(),
-	//	byteSize,
-	//	mInputUploadBufferA);
-
-	//mInputBufferB = d3dUtil::CreateDefaultBuffer(
-	//	md3dDevice.Get(),
-	//	mCommandList.Get(),
-	//	dataB.data(),
-	//	byteSize,
-	//	mInputUploadBufferB);
-
-	//// Create the buffer that will be a UAV.
-	//ThrowIfFailed(md3dDevice->CreateCommittedResource(
-	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-	//	D3D12_HEAP_FLAG_NONE,
-	//	&CD3DX12_RESOURCE_DESC::Buffer(byteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-	//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-	//	nullptr,
-	//	IID_PPV_ARGS(&mOutputBuffer)));
-
-	//ThrowIfFailed(md3dDevice->CreateCommittedResource(
-	//	&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-	//	D3D12_HEAP_FLAG_NONE,
-	//	&CD3DX12_RESOURCE_DESC::Buffer(byteSize),
-	//	D3D12_RESOURCE_STATE_COPY_DEST,
-	//	nullptr,
-	//	IID_PPV_ARGS(&mReadBackBuffer)));
 }

@@ -17,7 +17,7 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 	int y = dispatchThreadID.y;
 	
 	gOutput[dispatchThreadID.x].position = gInput[dispatchThreadID.x].position + 1;
-	gOutput[dispatchThreadID.x].velocity.x = gInput[dispatchThreadID.x].velocity.x;
-	gOutput[dispatchThreadID.x].initialPosition.x = gInput[dispatchThreadID.x].initialPosition.x;
+	gOutput[dispatchThreadID.x].velocity.x = gInput[dispatchThreadID.x].velocity.x + 1;
+	gOutput[dispatchThreadID.x].initialPosition.x = gInput[dispatchThreadID.x].initialPosition.x + 1;
 
 }

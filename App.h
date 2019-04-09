@@ -40,7 +40,7 @@ private:
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-	ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
+	//ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
 	ComPtr<ID3D12RootSignature> mImGuiRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mComputeHeap = nullptr;
@@ -69,10 +69,6 @@ private:
 	ParticleManager* pManager;
 	UI *mUI;
 	GPUParticleManager* gpuPar;
-
-	//Microsoft::WRL::ComPtr<ID3D12Resource> mInputBuffer = nullptr;
-	//Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBuffer = nullptr;
-
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBufferA = nullptr;
