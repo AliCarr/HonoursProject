@@ -15,7 +15,7 @@ public:
 
 	void Update(float, 
 				Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, 
-				Microsoft::WRL::ComPtr<ID3D12Device> &);
+				Microsoft::WRL::ComPtr<ID3D12Device> &, int);
 
 	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, 
 				ComPtr<ID3D12DescriptorHeap>&, 
@@ -24,7 +24,7 @@ public:
 
 private: //Constants
 	static const int numberOfParticles = 1000;
-
+	int currentNumberOfParticles = 100;
 	//Constants for the particles mesh
 	const float width = 0.004f;
 	const float depth = 0.004f;

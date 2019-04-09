@@ -98,7 +98,7 @@ void App::Update(const GameTimer& gt)
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
 
-	pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice);
+	pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice, mUI->numberOfParticles);
 
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));

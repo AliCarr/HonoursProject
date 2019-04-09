@@ -1,11 +1,8 @@
 #include "UI.h"
 
-
-
 UI::UI()
 {
 }
-
 
 UI::~UI()
 {
@@ -38,6 +35,8 @@ void UI::GUIInit(HWND wnd, ID3D12Device* device, ID3D12DescriptorHeap *heap)
 	bool show_demo_window = true;
 	bool show_another_window = false;
 
+	numberOfParticles = 100;
+
 }
 
 void UI::GUIUpdate()
@@ -47,18 +46,15 @@ void UI::GUIUpdate()
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	
-	//bool show = true;
-	//ImGui::ShowDemoWindow(&show);
 
 	static float f = 0.0f;
-	static int counter = 0;
+	int counter = 0;
 
-	ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+	ImGui::Begin("Hello, world!");
 
 		float current = 2;
 		ImGui::Text("Number of Particles");
-		ImGui::SliderFloat("Number", &current, 1, 1200);
+		ImGui::SliderInt("Number", &numberOfParticles, 1, 1200);
 		
 	ImGui::End();
 }

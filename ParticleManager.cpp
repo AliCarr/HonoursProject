@@ -39,7 +39,7 @@ ParticleManager::~ParticleManager()
 	}
 }
 
-void ParticleManager::Update( float time, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, Microsoft::WRL::ComPtr<ID3D12Device> &device)
+void ParticleManager::Update( float time, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, Microsoft::WRL::ComPtr<ID3D12Device> &device, int num)
 {
 	for (int c = 0; c < numberOfParticles; c++)
 	{
@@ -48,12 +48,12 @@ void ParticleManager::Update( float time, Microsoft::WRL::ComPtr<ID3D12GraphicsC
 			UpdatePosition(c, time, currVB);
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
 	}
-
+	currentNumberOfParticles = num;
 }
 
 void ParticleManager::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12DescriptorHeap> &heap, UINT size, Microsoft::WRL::ComPtr<ID3D12Device> &device)
 {
-	for (int c = 0; c < numberOfParticles; c++)
+	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
 		commandList->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
 

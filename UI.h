@@ -12,9 +12,10 @@ public:
 	void GUIInit(HWND, ID3D12Device*, ID3D12DescriptorHeap*);
 	void GUIUpdate();
 	void GUIRender(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>);
-
+	int numberOfParticles;
 
 private:
 	ComPtr<ID3D12DescriptorHeap> uiHeap = nullptr;
+	
 };
 
