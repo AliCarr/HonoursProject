@@ -74,7 +74,7 @@ private:
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuUav;
 
 	
-
-	const UINT SRV = 0U;
-	const UINT UAV = 1U;
+	bool whichHandle = false;
+	UINT SRV = 0U;
+	UINT UAV = 1U;
 };

@@ -93,19 +93,21 @@ void GPUParticleManager::CreateRootSignatures()
 {
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[3];
+	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[4];
 
-	CD3DX12_DESCRIPTOR_RANGE ranges[3];
+	CD3DX12_DESCRIPTOR_RANGE ranges[4];
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //Changes table number, but not element in table
+	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); 
+	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1); //Changes table number, but not element in table
 
 	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(3, computeSlotRootParameter,
+	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(4, computeSlotRootParameter,
 		0, nullptr);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -130,13 +132,28 @@ void GPUParticleManager::CreateRootSignatures()
 
 void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12RootSignature> rootSig, ComPtr<ID3D12DescriptorHeap> &heap)
 {
-	//Let the output buffer be used as a UAV
-	list->ResourceBarrier(1, 
-						  &CD3DX12_RESOURCE_BARRIER::Transition(outputParticleBuffer.Get(), 
-						  D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 
-						  D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-	
+	ID3D12Resource *pUavResource;
+
+	if (whichHandle == true)
+	{
+		SRV = 1U;
+		UAV = 3U;
+		pUavResource = inputParticleBuffer.Get();
+	}
+	else
+	{
+		SRV = 0U;
+		UAV = 2U;
+		pUavResource = outputParticleBuffer.Get();
+	}
+
+	whichHandle = !whichHandle;
+	list->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
+			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
 	list->SetPipelineState(pso.Get());
 	list->SetComputeRootSignature(mComputeRootSignature.Get());
 	
@@ -146,12 +163,12 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 
 	m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), 0U, m_srvUavDescriptorSize);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), 2U, m_srvUavDescriptorSize);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
 
 	//set compute root descriptor table
 	list->SetComputeRootDescriptorTable(0U, srvHandle);
-	list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
+	//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
 	list->SetComputeRootDescriptorTable(2U, uavHandle);
 
 		list->Dispatch(numberOfParticles, 1, 1);
@@ -240,7 +257,7 @@ void GPUParticleManager::BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12Desc
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(heap->GetCPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
 		md3ddevice->CreateShaderResourceView(inputParticleBuffer.Get(), &srvDesc, srvHandle);	
-		md3ddevice->CreateShaderResourceView(inputParticleBuffer2.Get(), &srvDesc, srvHandle.Offset(m_srvUavDescriptorSize));
+		md3ddevice->CreateShaderResourceView(outputParticleBuffer.Get(), &srvDesc, srvHandle.Offset(m_srvUavDescriptorSize));
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -252,6 +269,7 @@ void GPUParticleManager::BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12Desc
 	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), 2U, m_srvUavDescriptorSize);	
 		md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle);
+		md3ddevice->CreateUnorderedAccessView(inputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle.Offset(m_srvUavDescriptorSize));
 }
 
 //Only has to be called once, is then used as the template for each particle

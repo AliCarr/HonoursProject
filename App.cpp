@@ -184,7 +184,7 @@ void App::BuildDescriptorHeaps()
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
 
 	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
-		computeHeapDesc.NumDescriptors = 3U;
+		computeHeapDesc.NumDescriptors = 4U;
 		computeHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		computeHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&computeHeapDesc, IID_PPV_ARGS(&mComputeHeap)));

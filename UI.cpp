@@ -36,7 +36,6 @@ void UI::GUIInit(HWND wnd, ID3D12Device* device, ID3D12DescriptorHeap *heap)
 	bool show_another_window = false;
 
 	numberOfParticles = 100;
-
 }
 
 void UI::GUIUpdate()
@@ -47,14 +46,14 @@ void UI::GUIUpdate()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	static float f = 0.0f;
-	int counter = 0;
+	//static float f = 0.0f;
+	//int counter = 0;
 
 	ImGui::Begin("Hello, world!");
 
-		float current = 2;
+		//float current = 2;
 		ImGui::Text("Number of Particles");
-		ImGui::SliderInt("Number", &numberOfParticles, 1, 1200);
+		ImGui::SliderInt("Number", &numberOfParticles, 1, 999);
 		
 	ImGui::End();
 }
