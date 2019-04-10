@@ -98,8 +98,8 @@ void App::Update(const GameTimer& gt)
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
 
-	pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice, mUI->numberOfParticles);
-
+	//pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice, mUI->numberOfParticles);
+	gpuPar->update();
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
 		objConstants.yPosiiton += gt.DeltaTime();
@@ -150,8 +150,8 @@ void App::Draw(const GameTimer& gt)
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mComputeHeap->GetGPUDescriptorHandleForHeapStart(), 0U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	mCommandList->SetGraphicsRootDescriptorTable(0U, srvHandle);
-
-	pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
+	gpuPar->Render(mCbvHeap);
+	//pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
 	// Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);

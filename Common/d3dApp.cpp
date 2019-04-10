@@ -539,7 +539,7 @@ void D3DApp::CreateSwapChain()
     sd.Windowed = true;
 	sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-	
+
 	// Note: Swap chain uses queue to perform flush.
     ThrowIfFailed(mdxgiFactory->CreateSwapChain(
 		mCommandQueue.Get(),

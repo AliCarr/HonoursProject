@@ -4,7 +4,7 @@
 ParticleManager::ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh)
 {
 	GenerateParticleMesh(device, commandList);
-
+	temp = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
 	srand((unsigned)time(&mTime));
 
 	for (int c = 0; c < numberOfParticles; c++)
@@ -44,9 +44,15 @@ void ParticleManager::Update( float time, Microsoft::WRL::ComPtr<ID3D12GraphicsC
 	for (int c = 0; c < numberOfParticles; c++)
 	{
 		auto currVB = mParticles.at(c)->dynamicVB.get();
+	
+	
+
 			mParticles.at(c)->energy -= time;
 			UpdatePosition(c, time, currVB);
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
+			//temp.release();
+			//temp.get_deleter();
+			//temp = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
 	}
 	currentNumberOfParticles = num;
 }
@@ -157,7 +163,6 @@ bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> 
 
 void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Vertex>* buffer)
 {
-
 	if(mParticles.at(current)->accelertaion <= maxAcceleration)
 		mParticles.at(current)->accelertaion += time / 30.0f;
 

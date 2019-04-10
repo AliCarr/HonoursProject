@@ -60,5 +60,7 @@ private: //Constants
 	Vertex vert[numberOfParticles];
 	time_t mTime;
 
+	std::unique_ptr<UploadBuffer<Vertex>> temp = nullptr;
+
 	//std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
 };

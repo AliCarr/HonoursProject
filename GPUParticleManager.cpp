@@ -1,7 +1,5 @@
 #include "GPUParticleManager.h"
 
-
-
 GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh, ComPtr<ID3D12DescriptorHeap> mComputeHeap, ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO)
 {
 	md3ddevice = device;
@@ -10,7 +8,7 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 
 	//Random offsets need to be as random as possible to prevent grid effect
 	srand((unsigned)time(&mTime));
-	for (int c = 0; c < numberOfParticles; c++)
+	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
 		auto par = new ParticleInfromation();
 			par->geo = new MeshGeometry(*mGeo);
@@ -19,6 +17,8 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 			par->velocity = StartingVelocity();
 			par->accelertaion = 0;
 			par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
+			//par->geo->VertexBufferGPU = mGeo->VertexBufferGPU();
+				
 		mParticles.push_back(std::move(par));
 
 		//Need the particle information in our compute data vector
@@ -66,10 +66,28 @@ void GPUParticleManager::update()
 	outputParticleBuffer->ReadFromSubresource(&particleInputeData, numberOfParticles * sizeof(ComputeData), sizeof(particleDataSub), 0, NULL);
 
 	//update the input buffer with the output buffers results
-		list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+		/*list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
 		list->CopyBufferRegion(inputParticleBuffer.Get(), 0, outputParticleBuffer.Get(), 0, sizeof(ComputeData)*numberOfParticles);
-		list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+		list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));*/
 
+
+		for (int c = 0; c < currentNumberOfParticles; c++)
+		{
+			auto currVB = mParticles.at(c)->dynamicVB.get();
+
+			mParticles.at(c)->energy -= 0;
+			Vertex v;
+			v.Pos = mParticles.at(c)->position;
+			v.Color = XMFLOAT4(DirectX::Colors::White);
+			v.texCoord = { 0.0f, 0.0f };
+			v.id = c;
+			currVB->CopyData(c, v);
+			//UpdatePosition(c, 1.0f, currVB);
+			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
+			//temp.release();
+			//temp.get_deleter();
+			//temp = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
+		}
 	//Preform the typical update function methods
 }
 
@@ -130,6 +148,25 @@ void GPUParticleManager::CreateRootSignatures()
 	mComputeRootSignature->SetName(L"Compute Root Signature");
 }
 
+void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
+{
+	for (int c = 0; c < currentNumberOfParticles; c++)
+	{
+		list->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
+
+		list->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
+		list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		list->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
+
+		list->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
+			1,
+			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
+			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
+			0);
+	}
+}
+
 void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12RootSignature> rootSig, ComPtr<ID3D12DescriptorHeap> &heap)
 {
 
@@ -171,7 +208,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 	//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
 	list->SetComputeRootDescriptorTable(2U, uavHandle);
 
-		list->Dispatch(numberOfParticles, 1, 1);
+		list->Dispatch(currentNumberOfParticles, 1, 1);
 		update();
 }
 

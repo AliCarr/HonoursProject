@@ -12,7 +12,7 @@ public:
 
 	void initialise();
 	void update();
-	void render();
+	void Render(ComPtr<ID3D12DescriptorHeap> &heap);
 	void Execute(ID3D12GraphicsCommandList*, ComPtr<ID3D12PipelineState>, ComPtr<ID3D12RootSignature>, ComPtr<ID3D12DescriptorHeap>&);
 	void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 	ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
@@ -23,7 +23,7 @@ private:
 	UINT vertexOffset;
 	UINT indexCount;
 	const int numOfParticles = 1000;
-	
+	int currentNumberOfParticles = 100;
 	
 	
 	void CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
@@ -46,8 +46,8 @@ private:
 	GeometryGenerator generator;
 	SubmeshGeometry boxSubmesh;
 	Vertex vert[numberOfParticles];
-	const float width = 0.004f;
-	const float depth = 0.004f;
+	const float width = 0.4f;
+	const float depth = 0.4f;
 	const UINT32 rows = 2;
 	const UINT32 columns = 2;
 	std::vector<ComputeData> particleInputeData;
