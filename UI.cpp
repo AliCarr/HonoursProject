@@ -45,16 +45,58 @@ void UI::GUIUpdate()
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+	bool t = true;
+	colours[0] = false;
+	colours[1] = false;
+	static bool no_titlebar = false;
+	static bool no_scrollbar = false;
+	static bool no_menu = false;
+	static bool no_move = false;
+	static bool no_resize = false;
+	static bool no_collapse = false;
+	static bool no_close = false;
+	static bool no_nav = false;
+	static bool no_background = false;
+	static bool no_bring_to_front = false;
 
-	//static float f = 0.0f;
-	//int counter = 0;
 
-	ImGui::Begin("Hello, world!");
+	ImGuiWindowFlags window_flags = 0;
+	if (no_titlebar)        window_flags |= ImGuiWindowFlags_NoTitleBar;
+	if (no_scrollbar)       window_flags |= ImGuiWindowFlags_NoScrollbar;
+	if (!no_menu)           window_flags |= ImGuiWindowFlags_MenuBar;
+	if (no_move)            window_flags |= ImGuiWindowFlags_NoMove;
+	if (no_resize)          window_flags |= ImGuiWindowFlags_NoResize;
+	if (no_collapse)        window_flags |= ImGuiWindowFlags_NoCollapse;
+	if (no_nav)             window_flags |= ImGuiWindowFlags_NoNav;
+	if (no_background)      window_flags |= ImGuiWindowFlags_NoBackground;
+	if (no_bring_to_front)  window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-		//float current = 2;
-		ImGui::Text("Number of Particles");
-		ImGui::SliderInt("Number", &numberOfParticles, 1, 999);
-		
+	if (!ImGui::Begin("ImGui Demo", &t, window_flags))
+	{
+		// Early out if the window is collapsed, as an optimization.
+		ImGui::End();
+		return;
+	}
+
+	ImGui::PushItemWidth(ImGui::GetFontSize() * -12);
+
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("Colours"))
+		{
+			ImGui::MenuItem("Red", NULL, &colours[0]);
+			ImGui::MenuItem("Blue", NULL, &colours[1]);
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Help"))
+		{
+			ImGui::MenuItem("Red", NULL, &colours[0]);
+			ImGui::MenuItem("Blue", NULL, &colours[1]);
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
+
 	ImGui::End();
 }
 

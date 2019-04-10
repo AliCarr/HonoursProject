@@ -44,15 +44,10 @@ void ParticleManager::Update( float time, Microsoft::WRL::ComPtr<ID3D12GraphicsC
 	for (int c = 0; c < numberOfParticles; c++)
 	{
 		auto currVB = mParticles.at(c)->dynamicVB.get();
-	
-	
 
 			mParticles.at(c)->energy -= time;
 			UpdatePosition(c, time, currVB);
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
-			//temp.release();
-			//temp.get_deleter();
-			//temp = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
 	}
 	currentNumberOfParticles = num;
 }

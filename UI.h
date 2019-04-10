@@ -16,6 +16,8 @@ public:
 
 private:
 	ComPtr<ID3D12DescriptorHeap> uiHeap = nullptr;
+
+	bool colours[2];
 	
 };
 
