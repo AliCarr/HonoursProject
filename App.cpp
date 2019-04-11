@@ -147,14 +147,16 @@ void App::Draw(const GameTimer& gt)
 	mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+	mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
 
-	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mComputeHeap->GetGPUDescriptorHandleForHeapStart(), 0U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	mCommandList->SetGraphicsRootDescriptorTable(0U, srvHandle);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
+	float fds = gt.DeltaTime();
 	gpuPar->Render(mCbvHeap);
 	//pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
 	// Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &barrier);
-	mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
+	//mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
 	
 	mUI->GUIRender(mCommandList);
 
@@ -177,7 +179,7 @@ void App::Draw(const GameTimer& gt)
 void App::BuildDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-		cbvHeapDesc.NumDescriptors = 11; //Originally 11, we're adding 2 more
+		cbvHeapDesc.NumDescriptors = 13; //Originally 11, we're adding 2 more
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
@@ -210,20 +212,60 @@ void App::BuildConstantBuffers()
 	md3dDevice->CreateConstantBufferView(
 		&cbvDesc,
 		mCbvHeap->GetCPUDescriptorHandleForHeapStart());
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = 2000;
+	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+	D3D12_RESOURCE_DESC bufferDesc;
+	ZeroMemory(&bufferDesc, sizeof(D3D12_RESOURCE_DESC));
+	bufferDesc.Alignment = 0;
+	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	bufferDesc.Width = 2000 * sizeof(ComputeData);
+	bufferDesc.Height = 1;
+	bufferDesc.DepthOrArraySize = 1;
+	bufferDesc.MipLevels = 1;
+	bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; //used for buffers as texture data can be located in them without creating a texture object
+	bufferDesc.SampleDesc.Count = 1;
+
+	md3dDevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&mInputBufferA));
+
+	mInputBufferA->SetName(L"Draw Buffer");
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetCPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	md3dDevice->CreateShaderResourceView(mInputBufferA.Get(), &srvDesc, srvHandle);
+
 }
 
 void App::BuildRootSignature()
 {
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER slotRootParameter[1];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[2];
+	CD3DX12_DESCRIPTOR_RANGE ranges[1];
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 
 	// Create a single descriptor table of CBVs.
 	CD3DX12_DESCRIPTOR_RANGE cbvTable;
 		cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+
 		slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
+		slotRootParameter[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr,
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter, 0, nullptr,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer

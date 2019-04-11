@@ -33,7 +33,8 @@ struct ComputeData
 {
 	XMFLOAT3 position;
 	XMFLOAT3 velocity;
-	XMFLOAT3 initialPosition;
+	XMFLOAT3 acceleration;
+	float energy;
 };
 
 struct ParticleInfromation

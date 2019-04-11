@@ -1,6 +1,6 @@
 cbuffer cbPerObject : register(b0)
 {
-	float4x4 gWorldViewProj; 
+	float4x4 gWorldViewProj;
 	float4 pulseColour;
 	float gTime;
 };
@@ -24,30 +24,22 @@ struct particleData
 {
 	float3 position;
 	float3 velocity;
-	float3 initialPosition;
+	float3 acceleration;
+	float energy;
 };
 
 
-StructuredBuffer<particleData> gInput	:	register(t0);
+StructuredBuffer<particleData> gInput : register (t1);
 
 VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
-	float take = vin.id;
-	//gInput[vin.id].position.x = 1;
-	// Transform to homogeneous clip space.
-	//vin.PosL.xy += 0.5f*sin(vin.PosL.x)*sin(3.0f*gTime);
-	//vin.PosL.z *= 0.6f + 0.4f*sin(2.0f*gTime);
-	vout.colour = vin.colour;// float4(vin.PosL.x, vin.PosL.y, vin.PosL.z, 1);
-	
-	
-	
-	vout.PosH = mul(float4(vin.PosL , 1.0f), gWorldViewProj);
 
-	
-	
-    
-    return vout;
+	vout.colour = vin.colour;
+
+	vout.PosH = mul(float4(vin.PosL + gInput[vin.id].position, 1), gWorldViewProj);
+
+	return vout;
 }
 
 

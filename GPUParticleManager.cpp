@@ -15,18 +15,38 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 			par->position = StartingPosition();
 			par->dynamicVB = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
 			par->velocity = StartingVelocity();
-			par->accelertaion = 0;
+			par->accelertaion = 9.8f;
 			par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
-			//par->geo->VertexBufferGPU = mGeo->VertexBufferGPU();
-				
-		mParticles.push_back(std::move(par));
 
+			for (UINT i = 0; i < vertexOffset; i++)
+			{
+				//Offset the cooridnates for each vertex
+				par->position.x += vert[i].Pos.x + (par->velocity.x*(1 / 1));
+				par->position.y += vert[i].Pos.y + (par->velocity.y*(1 / 1)) - par->accelertaion;
+				par->position.z += vert[i].Pos.z + (par->velocity.z*(1 / 1));
+
+				Vertex v;
+				v.Pos = par->position;
+				v.Color = XMFLOAT4(DirectX::Colors::White);
+				v.texCoord = { 0.0f, 0.0f };
+				v.id = c;
+				par->dynamicVB->CopyData(i, v);
+				par->velocity.x = 0.00f;
+				par->velocity.z = 0.00f;
+			}
+			par->geo->VertexBufferGPU = par->dynamicVB->Resource();
+
+		mParticles.push_back(std::move(par));
+		
 		//Need the particle information in our compute data vector
 		auto data = new ComputeData();
-			data->initialPosition = par->position;
+			data->acceleration = XMFLOAT3(0, 0, 0);
 			data->position = par->position;
 			data->velocity = par->velocity;
+			data->energy = 1;
 		particleInputeData.push_back(std::move(*data));
+
+		
 	}
 
 	BuildResources();
@@ -59,31 +79,12 @@ void GPUParticleManager::BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12Pip
 void GPUParticleManager::update()
 {
 
-	//Change this so it only switches the SRV and UAV. No need to copy to subresource
-	particleInputeData.clear();
-	D3D12_SUBRESOURCE_DATA particleDataSub = {};
-	//Get the exectued results in a form that you can use
-	outputParticleBuffer->ReadFromSubresource(&particleInputeData, numberOfParticles * sizeof(ComputeData), sizeof(particleDataSub), 0, NULL);
+	////Change this so it only switches the SRV and UAV. No need to copy to subresource
+	//particleInputeData.clear();
+	//D3D12_SUBRESOURCE_DATA particleDataSub = {};
+	////Get the exectued results in a form that you can use
+	//outputParticleBuffer->ReadFromSubresource(&particleInputeData, numberOfParticles * sizeof(ComputeData), sizeof(particleDataSub), 0, NULL);
 
-	for (int c = 0; c < currentNumberOfParticles; c++)
-	{
-		auto currVB = mParticles.at(c)->dynamicVB.get();
-
-		mParticles.at(c)->energy -= 0;
-		Vertex v;
-
-		UpdatePosition(c, 1.0f, currVB);
-	/*	v.Pos = mParticles.at(c)->position;
-		v.Pos.x += c;
-		v.Pos.y -= c;
-		v.Pos.z += c;
-		v.Color = XMFLOAT4(DirectX::Colors::White);
-		v.texCoord = { 0.0f, 0.0f };
-		v.id = c;*/
-		//currVB->CopyData(c, v);
-		mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
-	}
-	//Preform the typical update function methods
 }
 
 //Called after "true" random is initialised 
@@ -165,7 +166,7 @@ void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12RootSignature> rootSig, ComPtr<ID3D12DescriptorHeap> &heap)
 {
 
-	ID3D12Resource *pUavResource;
+	//ID3D12Resource *pUavResource;
 
 	if (whichHandle == true)
 	{
@@ -203,8 +204,16 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 	//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
 	list->SetComputeRootDescriptorTable(2U, uavHandle);
 
-		list->Dispatch(currentNumberOfParticles, 1, 1);
+		list->Dispatch(1000, 1, 1);
 		update();
+
+
+		list->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+				D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+
 }
 
 void GPUParticleManager::BuildResources()
@@ -375,29 +384,11 @@ void GPUParticleManager::UpdatePosition(int current, float time, UploadBuffer<Ve
 
 	for (UINT i = 0; i < vertexOffset; i++)
 	{
-		//Offset the cooridnates for each vertex
 		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(time / 1));
 		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(time / 1)) - mParticles.at(current)->accelertaion;
 		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(time / 1));
-
-		Vertex v;
-		v.Pos = mParticles.at(current)->position;
-		v.Color = XMFLOAT4(DirectX::Colors::White);
-		v.texCoord = { 0.0f, 0.0f };
-		v.id = current;
-		buffer->CopyData(i, v);
-		mParticles.at(current)->velocity.x += 0.001f;
-		mParticles.at(current)->velocity.z += 0.001f;
+		mParticles.at(current)->velocity.x = 0.00f;
+		mParticles.at(current)->velocity.z = 0.00f;
 	}
 
-	if (mParticles.at(current)->position.y <= -3.0f)
-	{
-		mParticles.at(current)->accelertaion = -mParticles.at(current)->accelertaion / 2.2f;
-		mParticles.at(current)->velocity.x /= 1.2f;
-		mParticles.at(current)->velocity.z /= 1.2f;
-		mParticles.at(current)->position.y = -2.8f;
-	}
-
-	//if (mParticles.at(current)->energy <= 0.0f)
-	//	ParticleReset(current);
 }

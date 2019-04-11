@@ -24,25 +24,20 @@ struct particleData
 {
 	float3 position;
 	float3 velocity;
-	float3 initialPosition;
+	float3 acceleration;
+	float energy;
 };
 
 
-StructuredBuffer<particleData> gInput	:	register(t0);
+StructuredBuffer<particleData> gInput : register (t1);
 
 VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
-	float take = vin.id;
 
 	vout.colour = vin.colour;
 
-	//vout.PosL.x += gInput[vin.id].position.x;
-
-	vout.PosH = mul(float4(vin.PosL, 1), gWorldViewProj);
-
-
-
+	vout.PosH = mul(float4(vin.PosL + gInput[vin.id].position, 1), gWorldViewProj);
 
 	return vout;
 }

@@ -17,13 +17,16 @@ public:
 	void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 	ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
 	ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
+	UINT SRV = 0U;
+
+	ID3D12Resource *pUavResource;
 private:
 	time_t mTime;
 	UINT indexOffset;
 	UINT vertexOffset;
 	UINT indexCount;
-	const int numOfParticles = 1000;
-	int currentNumberOfParticles = 100;
+	const int numOfParticles = 2000;
+	int currentNumberOfParticles = 2000;
 	
 	
 	void CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
@@ -40,14 +43,14 @@ private:
 	//	UINT descriptorSize);
 
 	unsigned long long totalVertexCount;
-	static const int numberOfParticles = 10;
+	static const int numberOfParticles = 2000;
 	MeshGeometry *mGeo = nullptr;
 	std::vector<ParticleInfromation*> mParticles;
 	GeometryGenerator generator;
 	SubmeshGeometry boxSubmesh;
 	Vertex vert[numberOfParticles];
-	const float width = 0.4f;
-	const float depth = 0.4f;
+	const float width = 0.004f;
+	const float depth = 0.004f;
 	const UINT32 rows = 2;
 	const UINT32 columns = 2;
 	std::vector<ComputeData> particleInputeData;
@@ -63,7 +66,7 @@ private:
 	ComPtr<ID3D12Resource> inputParticleBuffer2;
 	ComPtr<ID3D12Resource> outputParticleBuffer;
 	ComPtr<ID3D12Resource> uploadParticleBuffer;
-
+	
 	ComPtr<ID3D12RootSignature> m_rootSignature;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> md3ddevice;
@@ -75,6 +78,6 @@ private:
 
 	
 	bool whichHandle = false;
-	UINT SRV = 0U;
+	
 	UINT UAV = 1U;
 };

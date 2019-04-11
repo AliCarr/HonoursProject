@@ -176,6 +176,7 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 		buffer->CopyData(i, v);
 		mParticles.at(current)->velocity.x += 0.001f;
 		mParticles.at(current)->velocity.z += 0.001f;
+		
 	}
 
 	if (mParticles.at(current)->position.y <= -3.0f)
