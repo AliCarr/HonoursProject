@@ -19,5 +19,4 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 	gOutput[dispatchThreadID.x].position.y += 1;
 	gOutput[dispatchThreadID.x].position.z += 1;
 	gOutput[dispatchThreadID.x].position.x += 1;
-
 }
