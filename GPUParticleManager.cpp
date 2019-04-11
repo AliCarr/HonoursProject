@@ -65,29 +65,24 @@ void GPUParticleManager::update()
 	//Get the exectued results in a form that you can use
 	outputParticleBuffer->ReadFromSubresource(&particleInputeData, numberOfParticles * sizeof(ComputeData), sizeof(particleDataSub), 0, NULL);
 
-	//update the input buffer with the output buffers results
-		/*list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
-		list->CopyBufferRegion(inputParticleBuffer.Get(), 0, outputParticleBuffer.Get(), 0, sizeof(ComputeData)*numberOfParticles);
-		list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));*/
+	for (int c = 0; c < currentNumberOfParticles; c++)
+	{
+		auto currVB = mParticles.at(c)->dynamicVB.get();
 
+		mParticles.at(c)->energy -= 0;
+		Vertex v;
 
-		for (int c = 0; c < currentNumberOfParticles; c++)
-		{
-			auto currVB = mParticles.at(c)->dynamicVB.get();
-
-			mParticles.at(c)->energy -= 0;
-			Vertex v;
-			v.Pos = mParticles.at(c)->position;
-			v.Color = XMFLOAT4(DirectX::Colors::White);
-			v.texCoord = { 0.0f, 0.0f };
-			v.id = c;
-			currVB->CopyData(c, v);
-			//UpdatePosition(c, 1.0f, currVB);
-			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
-			//temp.release();
-			//temp.get_deleter();
-			//temp = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
-		}
+		UpdatePosition(c, 1.0f, currVB);
+	/*	v.Pos = mParticles.at(c)->position;
+		v.Pos.x += c;
+		v.Pos.y -= c;
+		v.Pos.z += c;
+		v.Color = XMFLOAT4(DirectX::Colors::White);
+		v.texCoord = { 0.0f, 0.0f };
+		v.id = c;*/
+		//currVB->CopyData(c, v);
+		mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
+	}
 	//Preform the typical update function methods
 }
 
@@ -371,4 +366,38 @@ bool GPUParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Devic
 		return false;
 
 	return true;
+}
+
+void GPUParticleManager::UpdatePosition(int current, float time, UploadBuffer<Vertex>* buffer)
+{
+	if (mParticles.at(current)->accelertaion <= 1)
+		mParticles.at(current)->accelertaion += time / 30.0f;
+
+	for (UINT i = 0; i < vertexOffset; i++)
+	{
+		//Offset the cooridnates for each vertex
+		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(time / 1));
+		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(time / 1)) - mParticles.at(current)->accelertaion;
+		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(time / 1));
+
+		Vertex v;
+		v.Pos = mParticles.at(current)->position;
+		v.Color = XMFLOAT4(DirectX::Colors::White);
+		v.texCoord = { 0.0f, 0.0f };
+		v.id = current;
+		buffer->CopyData(i, v);
+		mParticles.at(current)->velocity.x += 0.001f;
+		mParticles.at(current)->velocity.z += 0.001f;
+	}
+
+	if (mParticles.at(current)->position.y <= -3.0f)
+	{
+		mParticles.at(current)->accelertaion = -mParticles.at(current)->accelertaion / 2.2f;
+		mParticles.at(current)->velocity.x /= 1.2f;
+		mParticles.at(current)->velocity.z /= 1.2f;
+		mParticles.at(current)->position.y = -2.8f;
+	}
+
+	//if (mParticles.at(current)->energy <= 0.0f)
+	//	ParticleReset(current);
 }
