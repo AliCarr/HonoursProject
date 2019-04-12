@@ -40,7 +40,6 @@ private:
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-	//ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
 	ComPtr<ID3D12RootSignature> mImGuiRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mComputeHeap = nullptr;
@@ -57,8 +56,6 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 	POINT mLastMousePos;
-	
-	//const int maxParticles = 10;
 
 	const std::string MODEL_PATH = "Assets/Mount Wario.obj";
 	const std::string TEXTURE_PATH = "Assets/chalet.jpg";
@@ -72,11 +69,10 @@ private:
 	GPUParticleManager* gpuPar;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBufferA = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferB = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBufferB = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mOutputBuffer = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mReadBackBuffer = nullptr;
-
 	bool switcher;
+
+	void RecordRenderCommands();
+	void RecordCopyCommands();
+	void RecordComputeCommands();
+	void CreateLists();
 };
