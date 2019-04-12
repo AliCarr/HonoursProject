@@ -25,8 +25,8 @@ private:
 	UINT indexOffset;
 	UINT vertexOffset;
 	UINT indexCount;
-	const int numOfParticles = 2000;
-	int currentNumberOfParticles = 2000;
+	const int numOfParticles = 1936;
+	int currentNumberOfParticles = 1936;
 	
 	
 	void CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
@@ -43,7 +43,7 @@ private:
 	//	UINT descriptorSize);
 
 	unsigned long long totalVertexCount;
-	static const int numberOfParticles = 2000;
+	static const int numberOfParticles = 1936;
 	MeshGeometry *mGeo = nullptr;
 	std::vector<ParticleInfromation*> mParticles;
 	GeometryGenerator generator;
@@ -76,7 +76,7 @@ private:
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuSrv;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuUav;
 
-	
+	std::unique_ptr<UploadBuffer<Vertex>> uploader = nullptr;
 	bool whichHandle = false;
 	
 	UINT UAV = 1U;

@@ -1,2 +1,7 @@
 ﻿  App.cpp
+  GPUParticleManager.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(26): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(27): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(28): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+  Generating Code...
   Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Debug\Honours Project.exe

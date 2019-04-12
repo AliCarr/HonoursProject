@@ -21,18 +21,17 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 			for (UINT i = 0; i < vertexOffset; i++)
 			{
 				//Offset the cooridnates for each vertex
-				par->position.x += vert[i].Pos.x + (par->velocity.x*(1 / 1));
-				par->position.y += vert[i].Pos.y + (par->velocity.y*(1 / 1)) - par->accelertaion;
-				par->position.z += vert[i].Pos.z + (par->velocity.z*(1 / 1));
+				par->position.x += vert[i].Pos.x + 0.01;
+				par->position.y += vert[i].Pos.y + 0.01;
+				par->position.z += vert[i].Pos.z + 0.01;
 
 				Vertex v;
-				v.Pos = par->position;
-				v.Color = XMFLOAT4(DirectX::Colors::White);
-				v.texCoord = { 0.0f, 0.0f };
-				v.id = c;
+					v.Pos = par->position;
+					v.Color = XMFLOAT4(DirectX::Colors::White);
+					v.texCoord = { 0.0f, 0.0f };
+					v.id = c;
 				par->dynamicVB->CopyData(i, v);
-				par->velocity.x = 0.00f;
-				par->velocity.z = 0.00f;
+
 			}
 			par->geo->VertexBufferGPU = par->dynamicVB->Resource();
 
@@ -204,7 +203,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 	//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
 	list->SetComputeRootDescriptorTable(2U, uavHandle);
 
-		list->Dispatch(1000, 1, 1);
+		list->Dispatch(numberOfParticles, 1, 1);
 		update();
 
 
