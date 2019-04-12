@@ -64,6 +64,8 @@ App::~App()
 
 bool App::Initialize()
 {
+	switcher = true;
+
 	if (!D3DApp::Initialize())
 		return false;
 
@@ -75,7 +77,7 @@ bool App::Initialize()
 	BuildShadersAndInputLayout();
 	BuildPSO();
 
-	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo);
+	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo2);
 	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo, mComputeHeap, mcsByteCode, mPSO["compute"]);
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
 
@@ -98,8 +100,14 @@ void App::Update(const GameTimer& gt)
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
 
-	//pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice, mUI->numberOfParticles);
-	gpuPar->update();
+	if (!switcher)
+		pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice, mUI->numberOfParticles);
+	
+	if(switcher)
+		gpuPar->update();
+
+
+
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
 		objConstants.yPosiiton += gt.DeltaTime();
@@ -142,21 +150,31 @@ void App::Draw(const GameTimer& gt)
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get()};
 	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap);
 
-	mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
-	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-	mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
+	
+	if (switcher)
+	{
+		gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap);
 
-	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
-	float fds = gt.DeltaTime();
-	gpuPar->Render(mCbvHeap);
-	//pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
-	// Indicate a state transition on the resource usage.
+		mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+		mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
+
+		gpuPar->Render(mCbvHeap);
+	}
+
+	if (!switcher)
+	{
+		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+		pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
+	}
+
 	mCommandList->ResourceBarrier(1, &barrier);
-	//mCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
+
 	
 	mUI->GUIRender(mCommandList);
 

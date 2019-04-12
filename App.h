@@ -53,6 +53,7 @@ private:
 
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
+	std::unique_ptr<MeshGeometry> mBoxGeo2 = nullptr;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 	POINT mLastMousePos;
@@ -76,4 +77,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputUploadBufferB = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mOutputBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mReadBackBuffer = nullptr;
+
+	bool switcher;
 };
