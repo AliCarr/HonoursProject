@@ -64,6 +64,7 @@ App::~App()
 
 bool App::Initialize()
 {
+	////DON'T CHANGE THIS UNTIL PSO FIXED!!!!
 	switcher = true;
 
 	if (!D3DApp::Initialize())
@@ -105,8 +106,6 @@ void App::Update(const GameTimer& gt)
 	
 	if(switcher)
 		gpuPar->update();
-
-
 
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
@@ -258,6 +257,7 @@ void App::BuildShadersAndInputLayout()
 	HRESULT hr = S_OK;
 
 	mvsByteCode = d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl", nullptr, "VS", "vs_5_0");
+	mvsCPUByteCode = d3dUtil::CompileShader(L"Shaders\\cpuParVS.hlsl", nullptr, "VS", "vs_5_0");
 	mpsByteCode = d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl", nullptr, "PS", "ps_5_0");
 	mcsByteCode = d3dUtil::CompileShader(L"Shaders\\particleCS.hlsl", nullptr, "UpdateWavesCS", "cs_5_0");
 
@@ -300,6 +300,38 @@ void App::BuildPSO()
 	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	psoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO["renderPSO"])));
+
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC cpuPsoDesc;
+	ZeroMemory(&cpuPsoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	cpuPsoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+	cpuPsoDesc.pRootSignature = mRootSignature.Get();
+
+	cpuPsoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mvsCPUByteCode->GetBufferPointer()),
+		mvsCPUByteCode->GetBufferSize()
+	};
+	cpuPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
+		mpsByteCode->GetBufferSize()
+	};
+
+	cpuPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	//psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	cpuPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	cpuPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	cpuPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	cpuPsoDesc.SampleMask = UINT_MAX;
+	cpuPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	cpuPsoDesc.NumRenderTargets = 1;
+	cpuPsoDesc.RTVFormats[0] = mBackBufferFormat;
+	cpuPsoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
+	cpuPsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+	cpuPsoDesc.DSVFormat = mDepthStencilFormat;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO["cpuPSO"])));
+
 }
 
 void App::OnMouseDown(WPARAM btnState, int x, int y)
@@ -346,12 +378,13 @@ void App::RecordRenderCommands()
 
 	if (switcher)
 	{
-		gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap);
+		RecordComputeCommands();
 
 		mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-		mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
+
+		RecordCopyCommands();
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
@@ -361,6 +394,8 @@ void App::RecordRenderCommands()
 
 	if (!switcher)
 	{
+		mCommandList->SetPipelineState(mPSO["cpuPSO"].Get());
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 		pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
 	}
@@ -371,11 +406,11 @@ void App::RecordRenderCommands()
 }
 void App::RecordCopyCommands()
 {
-
+	mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
 }
 void App::RecordComputeCommands()
 {
-
+	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap);
 }
 void App::CreateLists()
 {

@@ -64,15 +64,34 @@ private:
 	std::vector<uint32_t> indices;
 
 	Controls *mControl;
-	ParticleManager* pManager;
 	UI *mUI;
 	GPUParticleManager* gpuPar;
+	ParticleManager* pManager;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
 	bool switcher;
 
+
+	//Asynchronous Compute
 	void RecordRenderCommands();
 	void RecordCopyCommands();
 	void RecordComputeCommands();
 	void CreateLists();
+
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> acGraphicsList;
+	Microsoft::WRL::ComPtr<ID3D12CommandList> acComputeList;
+	Microsoft::WRL::ComPtr<ID3D12CommandList> acCopyList;
+
+	UINT frameIndex;
+	UINT previousIndex;
+
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> uploadAllocator, graphicsAllocator, copyAllocator, computeAllocator;
+
+	Microsoft::WRL::ComPtr<ID3D12Fence> graphicsFence, copyFence, computeFence;
+
+	//CPU Version
+	//std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mCPUPSO;
+	ComPtr<ID3DBlob> mvsCPUByteCode = nullptr;
+
+	//GPU Version 
 };
