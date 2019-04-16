@@ -20,6 +20,8 @@ public:
 	ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
 	UINT SRV = 0U;
 
+	void CopyBuffers(ComPtr<ID3D12Resource>&, ComPtr<ID3D12GraphicsCommandList>&, ComPtr<ID3D12CommandQueue>&);
+
 	ID3D12Resource *pUavResource;
 private:
 	time_t mTime;

@@ -412,7 +412,8 @@ void App::RecordRenderCommands()
 }
 void App::RecordCopyCommands()
 {
-	mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
+	//mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
+	gpuPar->CopyBuffers(mInputBufferA, mCommandList, mCommandQueue);
 }
 void App::RecordComputeCommands()
 {
