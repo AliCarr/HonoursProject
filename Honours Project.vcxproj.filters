@@ -105,6 +105,9 @@
     <ClCompile Include="GPUParticleManager.cpp">
       <Filter>Source Files\Particle System</Filter>
     </ClCompile>
+    <ClCompile Include="ACSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\Camera.h">
@@ -177,6 +180,9 @@
       <Filter>Header Files\Tools</Filter>
     </ClInclude>
     <ClInclude Include="GPUParticleManager.h">
+      <Filter>Header Files\Particle System</Filter>
+    </ClInclude>
+    <ClInclude Include="ACSystem.h">
       <Filter>Header Files\Particle System</Filter>
     </ClInclude>
   </ItemGroup>

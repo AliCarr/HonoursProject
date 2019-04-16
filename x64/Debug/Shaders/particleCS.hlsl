@@ -18,6 +18,8 @@ float2 rand_2_0004(in float2 uv)
 	return float2(noiseX, noiseY) * 0.04;
 }
 
+//
+
 [numthreads(100, 10, 1)]
 void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 {

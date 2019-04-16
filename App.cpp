@@ -72,15 +72,21 @@ bool App::Initialize()
 
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
+	
+
 	BuildDescriptorHeaps();
 	BuildConstantBuffers();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
 	BuildPSO();
 
+	
+
 	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo2);
-	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo, mComputeHeap, mcsByteCode, mPSO["compute"]);
+	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo, mComputeHeap, mcsByteCode, mPSO["compute"], mCommandQueue);
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
+
+	
 
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -256,10 +262,10 @@ void App::BuildShadersAndInputLayout()
 {
 	HRESULT hr = S_OK;
 
-	mvsByteCode = d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl", nullptr, "VS", "vs_5_0");
-	mvsCPUByteCode = d3dUtil::CompileShader(L"Shaders\\cpuParVS.hlsl", nullptr, "VS", "vs_5_0");
-	mpsByteCode = d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl", nullptr, "PS", "ps_5_0");
-	mcsByteCode = d3dUtil::CompileShader(L"Shaders\\particleCS.hlsl", nullptr, "UpdateWavesCS", "cs_5_0");
+	mvsByteCode =    d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl"   , nullptr, "VS",            "vs_5_0");
+	mvsCPUByteCode = d3dUtil::CompileShader(L"Shaders\\cpuParVS.hlsl"  , nullptr, "VS",            "vs_5_0");
+	mpsByteCode =    d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl"   , nullptr, "PS",            "ps_5_0");
+	mcsByteCode =    d3dUtil::CompileShader(L"Shaders\\particleCS.hlsl", nullptr, "UpdateWavesCS", "cs_5_0");
 
 	mInputLayout =
 	{
@@ -416,3 +422,4 @@ void App::CreateLists()
 {
 
 }
+

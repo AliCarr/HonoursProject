@@ -3,11 +3,12 @@
 
 #include "stdafx.h"
 #include <time.h>
+#include "ACSystem.h"
 
 class GPUParticleManager
 {
 public:
-	GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &, ID3D12GraphicsCommandList* , std::unique_ptr<MeshGeometry>& , ComPtr<ID3D12DescriptorHeap> , ComPtr<ID3DBlob> , ComPtr<ID3D12PipelineState > &);
+	GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &, ID3D12GraphicsCommandList* , std::unique_ptr<MeshGeometry>& , ComPtr<ID3D12DescriptorHeap> , ComPtr<ID3DBlob> , ComPtr<ID3D12PipelineState > &, ComPtr<ID3D12CommandQueue>& );
 	~GPUParticleManager();
 
 	void initialise();
@@ -80,4 +81,6 @@ private:
 	bool whichHandle = false;
 	
 	UINT UAV = 1U;
+
+	ACSystem *async;
 };

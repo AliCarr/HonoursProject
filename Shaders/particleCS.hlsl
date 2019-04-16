@@ -20,7 +20,7 @@ float2 rand_2_0004(in float2 uv)
 
 //
 
-[numthreads(100, 10, 1)]
+[numthreads(484, 1, 1)]
 void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 {
 	gOutput[dispatchThreadID.x] = gInput[dispatchThreadID.x];

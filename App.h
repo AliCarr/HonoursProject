@@ -36,7 +36,10 @@ private:
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
 	void BuildBuffers();
-
+	void RecordRenderCommands();
+	void RecordCopyCommands();
+	void RecordComputeCommands();
+	void CreateLists();
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
@@ -73,21 +76,10 @@ private:
 
 
 	//Asynchronous Compute
-	void RecordRenderCommands();
-	void RecordCopyCommands();
-	void RecordComputeCommands();
-	void CreateLists();
+	
 
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> acGraphicsList;
-	Microsoft::WRL::ComPtr<ID3D12CommandList> acComputeList;
-	Microsoft::WRL::ComPtr<ID3D12CommandList> acCopyList;
 
-	UINT frameIndex;
-	UINT previousIndex;
 
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> uploadAllocator, graphicsAllocator, copyAllocator, computeAllocator;
-
-	Microsoft::WRL::ComPtr<ID3D12Fence> graphicsFence, copyFence, computeFence;
 
 	//CPU Version
 	//std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mCPUPSO;
