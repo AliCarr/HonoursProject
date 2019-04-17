@@ -8,7 +8,6 @@ struct ComputeData
 };
 
 StructuredBuffer<ComputeData> gInput	:	register(t0);
-StructuredBuffer<ComputeData> gInput2	:	register(t1);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
 
 float2 rand_2_0004(in float2 uv)
@@ -20,7 +19,7 @@ float2 rand_2_0004(in float2 uv)
 
 //
 
-[numthreads(484, 1, 1)]
+[numthreads(256, 1, 1)]
 void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 {
 	gOutput[dispatchThreadID.x] = gInput[dispatchThreadID.x];
@@ -29,8 +28,6 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 
 	//Create Mass
 	float mass = gInput[dispatchThreadID.x].energy;
-
-	
 
 	gOutput[dispatchThreadID.x].position.y -= gOutput[dispatchThreadID.x].acceleration.y / 30;
 

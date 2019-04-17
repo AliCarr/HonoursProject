@@ -11,7 +11,6 @@ public:
 	GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &, ID3D12GraphicsCommandList* , std::unique_ptr<MeshGeometry>& , ComPtr<ID3D12DescriptorHeap> , ComPtr<ID3DBlob> , ComPtr<ID3D12PipelineState > &, ComPtr<ID3D12CommandQueue>& );
 	~GPUParticleManager();
 
-	void initialise();
 	void update();
 	void Render(ComPtr<ID3D12DescriptorHeap> &heap);
 	void Execute(ID3D12GraphicsCommandList*, ComPtr<ID3D12PipelineState>, ComPtr<ID3D12RootSignature>, ComPtr<ID3D12DescriptorHeap>&);
@@ -20,7 +19,7 @@ public:
 	ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
 	UINT SRV = 0U;
 
-	void CopyBuffers(ComPtr<ID3D12Resource>&, ComPtr<ID3D12GraphicsCommandList>&, ComPtr<ID3D12CommandQueue>&);
+	void CopyBuffers(ComPtr<ID3D12Resource> &draw, ComPtr<ID3D12GraphicsCommandList>& list, ComPtr<ID3D12CommandQueue>& queue, ComPtr<ID3D12PipelineState> &pso);
 
 	ID3D12Resource *pUavResource;
 private:
@@ -41,9 +40,6 @@ private:
 	void ParticleReset(int);
 	void BuildResources();
 	void BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO);
-	//void BuildDescriptors(CD3DX12_CPU_DESCRIPTOR_HANDLE hCpuDescriptor,
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor,
-	//	UINT descriptorSize);
 
 	unsigned long long totalVertexCount;
 	static const int numberOfParticles = 1936;
