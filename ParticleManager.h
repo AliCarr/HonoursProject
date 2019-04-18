@@ -23,8 +23,8 @@ public:
 				Microsoft::WRL::ComPtr<ID3D12Device> &);
 
 private: //Constants
-	static const int numberOfParticles = 1000;
-	int currentNumberOfParticles = 100;
+	static const int numberOfParticles = 2046;
+	int currentNumberOfParticles = 2046;
 	//Constants for the particles mesh
 	const float width = 0.004f;
 	const float depth = 0.004f;

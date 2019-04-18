@@ -58,7 +58,6 @@ App::~App()
 	{
 		delete &mBoxGeo;
 		mBoxGeo = 0;
-
 	}	
 }
 
@@ -102,11 +101,6 @@ void App::Update(const GameTimer& gt)
 
 	if (!switcher)
 		pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice, mUI->numberOfParticles);
-	
-	if(switcher)
-		gpuPar->update();
-
-
 
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
@@ -327,12 +321,12 @@ void App::RecordRenderCommands()
 {
 	// Indicate a state transition on the resource usage.
 	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = CurrentBackBuffer();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = CurrentBackBuffer();
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
@@ -346,17 +340,17 @@ void App::RecordRenderCommands()
 
 	if (switcher)
 	{
-		gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap);
+		gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap, mInputBufferA, mCommandQueue, mInputBufferA, mPSO["renderPSO"],mCbvHeap );
 
 		mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-		mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
+		//RecordCopyCommands();
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
-		gpuPar->Render(mCbvHeap);
+		//gpuPar->Render(mCbvHeap);
 	}
 
 	if (!switcher)
@@ -371,11 +365,11 @@ void App::RecordRenderCommands()
 }
 void App::RecordCopyCommands()
 {
-
+	//mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
 }
 void App::RecordComputeCommands()
 {
-
+	
 }
 void App::CreateLists()
 {
