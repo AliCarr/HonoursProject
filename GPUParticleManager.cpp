@@ -1,9 +1,9 @@
 #include "GPUParticleManager.h"
 
-GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh, ComPtr<ID3D12DescriptorHeap> mComputeHeap, ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO, ComPtr<ID3D12CommandQueue>& queue)
+GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh, ComPtr<ID3D12DescriptorHeap> mComputeHeap, ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO)
 {
 	md3ddevice = device;
-	
+	CreateRootSignatures();
 	GenerateParticleMesh(device, commandList);
 
 	//Random offsets need to be as random as possible to prevent grid effect
@@ -17,7 +17,7 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 			par->velocity = StartingVelocity();
 			par->accelertaion = 9.8f;
 			par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
-			
+
 			for (UINT i = 0; i < vertexOffset; i++)
 			{
 				//Offset the cooridnates for each vertex
@@ -47,14 +47,11 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 
 		
 	}
-	CreateRootSignatures();
 
 	BuildResources();
 	list = commandList;
 	BuildDescriptors(md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), mComputeHeap, commandList);
 	BuildPSO(mcsByteCode, mPSO);
-
-	async = new ACSystem(md3ddevice, queue, list);
 }
 
 
@@ -75,13 +72,18 @@ void GPUParticleManager::BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12Pip
 		reinterpret_cast<BYTE*>(mcsByteCode->GetBufferPointer()),
 		mcsByteCode->GetBufferSize()
 	};
-
-	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	ThrowIfFailed(md3ddevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&mPSO)));
 }
 
 void GPUParticleManager::update()
 {
+
+	////Change this so it only switches the SRV and UAV. No need to copy to subresource
+	//particleInputeData.clear();
+	//D3D12_SUBRESOURCE_DATA particleDataSub = {};
+	////Get the exectued results in a form that you can use
+	//outputParticleBuffer->ReadFromSubresource(&particleInputeData, numberOfParticles * sizeof(ComputeData), sizeof(particleDataSub), 0, NULL);
+
 }
 
 //Called after "true" random is initialised 
@@ -164,126 +166,53 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 {
 
 	//ID3D12Resource *pUavResource;
-	if(!async->IsActive())
+
+	if (whichHandle == true)
 	{
-		if (whichHandle == true)
-		{
-			SRV = 1U;
-			UAV = 3U;
-			pUavResource = inputParticleBuffer.Get();
-		}
-		else
-		{
-			SRV = 0U;
-			UAV = 2U;
-			pUavResource = outputParticleBuffer.Get();
-		}
+		SRV = 1U;
+		UAV = 3U;
+		pUavResource = inputParticleBuffer.Get();
+	}
+	else
+	{
+		SRV = 0U;
+		UAV = 2U;
+		pUavResource = outputParticleBuffer.Get();
+	}
 
-		whichHandle = !whichHandle;
-		list->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
-				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	whichHandle = !whichHandle;
+	list->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
+			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-		list->SetPipelineState(pso.Get());
-		list->SetComputeRootSignature(mComputeRootSignature.Get());
+	list->SetPipelineState(pso.Get());
+	list->SetComputeRootSignature(mComputeRootSignature.Get());
+	
+	//Set heaps
+	ID3D12DescriptorHeap* ppHeaps[] = { heap.Get() };
+	list->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-		//Set heaps
-		ID3D12DescriptorHeap* ppHeaps[] = { heap.Get() };
-		list->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
+	//set compute root descriptor table
+	list->SetComputeRootDescriptorTable(0U, srvHandle);
+	//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
+	list->SetComputeRootDescriptorTable(2U, uavHandle);
 
-		//set compute root descriptor table
-		list->SetComputeRootDescriptorTable(0U, srvHandle);
-		//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
-		list->SetComputeRootDescriptorTable(2U, uavHandle);
-
-		list->Dispatch(256, 1, 1);
+		list->Dispatch(numberOfParticles, 1, 1);
 		update();
+
 
 		list->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 				D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-	}
 
-	if (async->IsActive())
-	{
-		async->computeQueue->Wait(async->copyFence[async->previousIndex].Get(), async->copyFenceValues[async->previousIndex]);
-
-		ID3D12CommandAllocator* pCommandAllocator = async->computeAllocator[async->frameIndex].Get();
-		ID3D12GraphicsCommandList* pCommandList = async->acComputeList[async->frameIndex].Get();
-
-		ThrowIfFailed(pCommandAllocator->Reset());
-		ThrowIfFailed(pCommandList->Reset(pCommandAllocator, pso.Get()));
-
-		for (int i = 0; i < 4; ++i) 
-		{
-
-			ID3D12GraphicsCommandList* pCommandList = async->acComputeList[async->frameIndex].Get();
-			if (whichHandle == true)
-			{
-				SRV = 1U;
-				UAV = 3U;
-				pUavResource = inputParticleBuffer.Get();
-			}
-			else
-			{
-				SRV = 0U;
-				UAV = 2U;
-				pUavResource = outputParticleBuffer.Get();
-			}
-
-			//whichHandle = !whichHandle;
-			pCommandList->ResourceBarrier(1,
-				&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
-					D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-					D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-			pCommandList->SetPipelineState(pso.Get());
-			pCommandList->SetComputeRootSignature(mComputeRootSignature.Get());
-
-			//Set heaps
-			ID3D12DescriptorHeap* ppHeaps[] = { heap.Get() };
-			pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-			m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-			CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
-			CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
-
-			//set compute root descriptor table
-			pCommandList->SetComputeRootDescriptorTable(0U, srvHandle);
-			//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
-			pCommandList->SetComputeRootDescriptorTable(2U, uavHandle);
-
-			pCommandList->Dispatch(numberOfParticles/4, 1, 1);
-			update();
-
-			pCommandList->ResourceBarrier(1,
-				&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
-					D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-					D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-			pCommandList->SetName(L"TEST COMPUTE NAME");
-			//whichHandle = !whichHandle;
-		}
-
-		ThrowIfFailed(pCommandList->Close());
-
-		whichHandle = !whichHandle;
-
-		ID3D12CommandList* ppCommandLists[] = { async->acComputeList[async->frameIndex].Get() };
-
-		async->computeQueue->ExecuteCommandLists(1, ppCommandLists);
-		async->computeFenceValues[async->frameCount] = async->m_computeFenceValue;
-		async->computeQueue->Signal(async->computeFence[async->frameIndex].Get(), async->m_computeFenceValue);
-	}
 }
 
 void GPUParticleManager::BuildResources()
@@ -462,49 +391,3 @@ void GPUParticleManager::UpdatePosition(int current, float time, UploadBuffer<Ve
 	}
 
 }
-<<<<<<< HEAD
-
-void GPUParticleManager::CopyBuffers(ComPtr<ID3D12Resource> &draw, ComPtr<ID3D12GraphicsCommandList>& list, ComPtr<ID3D12CommandQueue>& queue, ComPtr<ID3D12PipelineState> &pso)
-{
-	if (async->IsActive())
-	{
-		ThrowIfFailed(async->copyAllocator[async->frameIndex]->Reset());
-		ThrowIfFailed(async->acCopyList[async->frameIndex]->Reset(async->copyAllocator[async->frameIndex].Get(), pso.Get()));
-
-		ID3D12GraphicsCommandList* pCommandList = async->acCopyList[async->frameIndex].Get();
-
-		D3D12_RESOURCE_BARRIER barriers[2];
-		barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
-			pUavResource,
-			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_COPY_SOURCE);
-
-		pCommandList->ResourceBarrier(1, barriers);
-
-		pCommandList->CopyResource(draw.Get(), pUavResource);
-		
-		barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
-			pUavResource,
-			D3D12_RESOURCE_STATE_COPY_SOURCE,
-			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
-			draw.Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
-		);
-
-		pCommandList->ResourceBarrier(2, barriers);
-
-		ThrowIfFailed(pCommandList->Close());
-
-		ID3D12CommandList* ppCommandLists[] = { async->acCopyList[async->frameIndex].Get() };
-
-		queue->ExecuteCommandLists(1, ppCommandLists);
-	}
-
-
-	if (!async->IsActive())
-		list->CopyResource(draw.Get(), pUavResource);
-}
-=======
->>>>>>> parent of 3860423... Copy List Almost done

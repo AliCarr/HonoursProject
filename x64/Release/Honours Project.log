@@ -1,19 +1,7 @@
-﻿  App.cpp
-  Camera.cpp
-  d3dApp.cpp
-  Controls.cpp
-  GPUParticleManager.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(24): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(25): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(26): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-  ModelLoader.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\modelloader.cpp(42): warning C4267: 'argument': conversion from 'size_t' to 'GeometryGenerator::uint32', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\modelloader.cpp(102): warning C4267: 'argument': conversion from 'size_t' to 'GeometryGenerator::uint32', possible loss of data
-  ParticleManager.cpp
-  UI.cpp
+﻿  GPUParticleManager.cpp
   Generating code
-  1016 of 2811 functions (36.1%) were compiled, the rest were copied from previous compilation.
-    245 functions were new in current compilation
-    112 functions had inline decision re-evaluated but remain unchanged
+  2 of 2016 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Release\Honours Project.exe

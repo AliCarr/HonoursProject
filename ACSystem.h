@@ -27,6 +27,10 @@ public:
 	UINT64 renderFenceValues[frameCount];
 
 
+	ComPtr<ID3D12GraphicsCommandList> acCopyList[frameCount];
+
+
+
 	UINT64 m_computeFenceValue;
 	UINT64 m_graphicsFenceValue;
 	UINT64 m_graphicsCopyFenceValue;
@@ -56,9 +60,7 @@ private:
 	ID3D12GraphicsCommandList* list;
 
 	ComPtr<ID3D12GraphicsCommandList> acGraphicsList[frameCount];
-	
-	ComPtr<ID3D12GraphicsCommandList> acCopyList[frameCount];
-	
+
 	ComPtr<ID3D12Resource> timeQueryReadBuffer[frameCount];
 	ComPtr<ID3D12QueryHeap> queryHeap;
 

@@ -36,10 +36,7 @@ private:
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
 	void BuildBuffers();
-	void RecordRenderCommands();
-	void RecordCopyCommands();
-	void RecordComputeCommands();
-	void CreateLists();
+
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
@@ -67,23 +64,15 @@ private:
 	std::vector<uint32_t> indices;
 
 	Controls *mControl;
+	ParticleManager* pManager;
 	UI *mUI;
 	GPUParticleManager* gpuPar;
-	ParticleManager* pManager;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
 	bool switcher;
 
-
-	//Asynchronous Compute
-	
-
-
-
-
-	//CPU Version
-	//std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mCPUPSO;
-	ComPtr<ID3DBlob> mvsCPUByteCode = nullptr;
-
-	//GPU Version 
+	void RecordRenderCommands();
+	void RecordCopyCommands();
+	void RecordComputeCommands();
+	void CreateLists();
 };

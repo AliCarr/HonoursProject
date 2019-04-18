@@ -1,5 +1,30 @@
-﻿  App.cpp
+﻿  Camera.cpp
+  d3dApp.cpp
+  d3dUtil.cpp
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\common\d3dutil.cpp(30): warning C4244: 'argument': conversion from 'std::streamoff' to 'SIZE_T', possible loss of data
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\common\d3dutil.cpp(70): warning C4244: '=': conversion from 'UINT64' to 'LONG_PTR', possible loss of data
+  DDSTextureLoader.cpp
+  GameTimer.cpp
+  GeometryGenerator.cpp
+  MathHelper.cpp
+  App.cpp
+  Controls.cpp
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\controls.cpp(7): warning C4316: 'Camera': object allocated on the heap may not be aligned 16
+  GPUParticleManager.cpp
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\gpuparticlemanager.cpp(24): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\gpuparticlemanager.cpp(25): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\gpuparticlemanager.cpp(26): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\gpuparticlemanager.cpp(333): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_dx12.cpp
+  imgui_impl_win32.cpp
+  imgui_widgets.cpp
+  ModelLoader.cpp
   ParticleManager.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(153): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+c:\users\1401292\downloads\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\honoursproject-acdf8b3e76067876e70b7d533e39e753d16784e0\particlemanager.cpp(113): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+  UI.cpp
   Generating Code...
-  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe
+  LINK : C:\Users\1401292\Downloads\HonoursProject-acdf8b3e76067876e70b7d533e39e753d16784e0\HonoursProject-acdf8b3e76067876e70b7d533e39e753d16784e0\Debug\Honours Project.exe not found or not built by the last incremental link; performing full link
+  Honours Project.vcxproj -> C:\Users\1401292\Downloads\HonoursProject-acdf8b3e76067876e70b7d533e39e753d16784e0\HonoursProject-acdf8b3e76067876e70b7d533e39e753d16784e0\Debug\Honours Project.exe

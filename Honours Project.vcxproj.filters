@@ -46,12 +46,6 @@
     <Filter Include="Libraries\Headers\GUI">
       <UniqueIdentifier>{b166a86b-bd49-41f9-bdbb-76b86bbed13e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\System Types">
-      <UniqueIdentifier>{c285f6e4-d1f9-46e0-9073-81d4994e9ab0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\System Types">
-      <UniqueIdentifier>{cb681f1c-11e0-41e5-8501-cee86fba7793}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\MathHelper.cpp">
@@ -109,9 +103,6 @@
       <Filter>Source Files\Tools</Filter>
     </ClCompile>
     <ClCompile Include="GPUParticleManager.cpp">
-      <Filter>Source Files\Particle System</Filter>
-    </ClCompile>
-    <ClCompile Include="ACSystem.cpp">
       <Filter>Source Files\Particle System</Filter>
     </ClCompile>
   </ItemGroup>
@@ -188,9 +179,6 @@
     <ClInclude Include="GPUParticleManager.h">
       <Filter>Header Files\Particle System</Filter>
     </ClInclude>
-    <ClInclude Include="ACSystem.h">
-      <Filter>Header Files\Particle System</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\colorVS.hlsl">
@@ -200,9 +188,6 @@
       <Filter>Resource Files\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\particleCS.hlsl">
-      <Filter>Resource Files\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\cpuParVS.hlsl">
       <Filter>Resource Files\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "Common/d3dApp.h"
 #include "Common/MathHelper.h"
 #include "Common/UploadBuffer.h"
@@ -8,13 +9,6 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 
-#define MAX_PARTICLES 1000
-#define WIDTH 0.004f
-#define DEPTH 0.004f
-#define ROWS 2
-#define COLUMNS 2
-#define MAX_SPEED 100.f
-#define MAX_ACCELERATION 10.f
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
