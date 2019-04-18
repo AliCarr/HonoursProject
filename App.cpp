@@ -416,3 +416,89 @@ void App::BuildPSO()
 
 }
 
+<<<<<<< HEAD
+=======
+void App::OnMouseDown(WPARAM btnState, int x, int y)
+{
+	mControl->OnMouseDown(btnState, x, y, MainWnd());
+}
+
+void App::OnMouseUp(WPARAM btnState, int x, int y)
+{
+	ReleaseCapture();
+}
+
+void App::OnMouseMove(WPARAM btnState, int x, int y)
+{
+	mControl->OnMouseMove(btnState, x, y);
+}
+
+void App::OnKeyboardInput(const GameTimer& gt)
+{
+	mControl->OnKeyboardInput(gt.DeltaTime());
+}
+
+
+void App::RecordRenderCommands()
+{
+	// Indicate a state transition on the resource usage.
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = CurrentBackBuffer();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	mCommandList->ResourceBarrier(1, &barrier);
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+	// Specify the buffers we are going to render to.
+	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get() };
+	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+
+	if (switcher)
+	{
+		RecordComputeCommands();
+
+		mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+
+		RecordCopyCommands();
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
+
+		gpuPar->Render(mCbvHeap);
+	}
+
+	if (!switcher)
+	{
+		mCommandList->SetPipelineState(mPSO["cpuPSO"].Get());
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+		pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
+	}
+
+	mCommandList->ResourceBarrier(1, &barrier);
+
+	mUI->GUIRender(mCommandList);
+}
+void App::RecordCopyCommands()
+{
+	mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
+}
+void App::RecordComputeCommands()
+{
+	gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap);
+}
+void App::CreateLists()
+{
+
+}
+
+>>>>>>> parent of 3860423... Copy List Almost done

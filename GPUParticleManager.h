@@ -19,8 +19,11 @@ public:
 	ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
 	UINT SRV = 0U;
 
+<<<<<<< HEAD
 	void CopyBuffers(ComPtr<ID3D12Resource> &draw, ComPtr<ID3D12GraphicsCommandList>& list, ComPtr<ID3D12CommandQueue>& queue, ComPtr<ID3D12PipelineState> &pso);
 
+=======
+>>>>>>> parent of 3860423... Copy List Almost done
 	ID3D12Resource *pUavResource;
 private:
 	time_t mTime;

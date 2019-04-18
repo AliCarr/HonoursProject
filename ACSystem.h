@@ -9,22 +9,16 @@ public:
 	ACSystem(ComPtr<ID3D12Device>&, ComPtr<ID3D12CommandQueue>&, ID3D12GraphicsCommandList*);
 	~ACSystem();
 
-	static const int frameCount = 1;
+	static const int frameCount = 4;
 
 	bool IsActive() { return active; };
 
 	ComPtr<ID3D12CommandQueue> computeQueue;
 
-	ComPtr<ID3D12CommandQueue> renderQueue;
-
 	ComPtr<ID3D12CommandAllocator> uploadAllocator, graphicsAllocator[frameCount], copyAllocator[frameCount], computeAllocator[frameCount];
 	ComPtr<ID3D12GraphicsCommandList> acComputeList[frameCount];
 
 	ComPtr<ID3D12Fence> graphicsFence[frameCount], copyFence[frameCount], computeFence[frameCount];
-
-	ComPtr<ID3D12GraphicsCommandList> acGraphicsList[frameCount];
-
-	ComPtr<ID3D12GraphicsCommandList> acCopyList[frameCount];
 
 	UINT frameIndex;
 	UINT previousIndex;
@@ -61,7 +55,9 @@ private:
 
 	ID3D12GraphicsCommandList* list;
 
-
+	ComPtr<ID3D12GraphicsCommandList> acGraphicsList[frameCount];
+	
+	ComPtr<ID3D12GraphicsCommandList> acCopyList[frameCount];
 	
 	ComPtr<ID3D12Resource> timeQueryReadBuffer[frameCount];
 	ComPtr<ID3D12QueryHeap> queryHeap;

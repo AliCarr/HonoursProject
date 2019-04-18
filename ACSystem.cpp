@@ -9,13 +9,12 @@ ACSystem::ACSystem(ComPtr<ID3D12Device> &device, ComPtr<ID3D12CommandQueue>& que
 	queue->GetTimestampFrequency(&frequency);
 
 	//Need to ensure correct value is being set here
-	frameIndex = 0;
+	frameIndex = 1;
 	previousIndex = frameIndex;
 
 	list = commandList;
 
 	m_computeFenceValue = 1;
-	
 
 	CreateComputeResources();
 	CreateGraphicsResources();

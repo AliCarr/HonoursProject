@@ -214,7 +214,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 
 	if (async->IsActive())
 	{
-	//	async->computeQueue->Wait(async->copyFence[async->previousIndex].Get(), async->copyFenceValues[async->previousIndex]);
+		async->computeQueue->Wait(async->copyFence[async->previousIndex].Get(), async->copyFenceValues[async->previousIndex]);
 
 		ID3D12CommandAllocator* pCommandAllocator = async->computeAllocator[async->frameIndex].Get();
 		ID3D12GraphicsCommandList* pCommandList = async->acComputeList[async->frameIndex].Get();
@@ -222,7 +222,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 		ThrowIfFailed(pCommandAllocator->Reset());
 		ThrowIfFailed(pCommandList->Reset(pCommandAllocator, pso.Get()));
 
-		for (int i = 0; i < 1; ++i) 
+		for (int i = 0; i < 4; ++i) 
 		{
 
 			ID3D12GraphicsCommandList* pCommandList = async->acComputeList[async->frameIndex].Get();
@@ -238,7 +238,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 				UAV = 2U;
 				pUavResource = outputParticleBuffer.Get();
 			}
-			whichHandle = !whichHandle;
+
 			//whichHandle = !whichHandle;
 			pCommandList->ResourceBarrier(1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
@@ -262,7 +262,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 			//list->SetComputeRootDescriptorTable(1U, srvHandle.Offset(m_srvUavDescriptorSize));
 			pCommandList->SetComputeRootDescriptorTable(2U, uavHandle);
 
-			pCommandList->Dispatch(numberOfParticles, 1, 1);
+			pCommandList->Dispatch(numberOfParticles/4, 1, 1);
 			update();
 
 			pCommandList->ResourceBarrier(1,
@@ -270,19 +270,19 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 					D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 					D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-			//pCommandList->SetName(L"TEST COMPUTE NAME");
+			pCommandList->SetName(L"TEST COMPUTE NAME");
 			//whichHandle = !whichHandle;
 		}
 
 		ThrowIfFailed(pCommandList->Close());
 
-		//whichHandle = !whichHandle;
+		whichHandle = !whichHandle;
 
 		ID3D12CommandList* ppCommandLists[] = { async->acComputeList[async->frameIndex].Get() };
 
 		async->computeQueue->ExecuteCommandLists(1, ppCommandLists);
-	/*	async->computeFenceValues[async->frameCount] = async->m_computeFenceValue;
-		async->computeQueue->Signal(async->computeFence[async->frameIndex].Get(), async->m_computeFenceValue);*/
+		async->computeFenceValues[async->frameCount] = async->m_computeFenceValue;
+		async->computeQueue->Signal(async->computeFence[async->frameIndex].Get(), async->m_computeFenceValue);
 	}
 }
 
@@ -462,6 +462,7 @@ void GPUParticleManager::UpdatePosition(int current, float time, UploadBuffer<Ve
 	}
 
 }
+<<<<<<< HEAD
 
 void GPUParticleManager::CopyBuffers(ComPtr<ID3D12Resource> &draw, ComPtr<ID3D12GraphicsCommandList>& list, ComPtr<ID3D12CommandQueue>& queue, ComPtr<ID3D12PipelineState> &pso)
 {
@@ -505,3 +506,5 @@ void GPUParticleManager::CopyBuffers(ComPtr<ID3D12Resource> &draw, ComPtr<ID3D12
 	if (!async->IsActive())
 		list->CopyResource(draw.Get(), pUavResource);
 }
+=======
+>>>>>>> parent of 3860423... Copy List Almost done
