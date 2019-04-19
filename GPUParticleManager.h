@@ -11,7 +11,17 @@ public:
 	~GPUParticleManager();
 
 	void Render(ComPtr<ID3D12DescriptorHeap> &heap);
-	void Execute(ID3D12GraphicsCommandList*, ComPtr<ID3D12PipelineState>, ComPtr<ID3D12RootSignature>, ComPtr<ID3D12DescriptorHeap>&, ComPtr<ID3D12Resource>&, ComPtr<ID3D12CommandQueue>, ComPtr<ID3D12Resource>& drawBuffer, ComPtr<ID3D12PipelineState> pso2, ComPtr<ID3D12DescriptorHeap> &heap);
+	void Execute(ID3D12GraphicsCommandList*, 
+				ComPtr<ID3D12PipelineState>, 
+		ComPtr<ID3D12RootSignature>, 
+		ComPtr<ID3D12DescriptorHeap>&, 
+		ComPtr<ID3D12Resource>, 
+		ComPtr<ID3D12CommandQueue>, 
+		ComPtr<ID3D12Resource>& drawBuffer,
+		ComPtr<ID3D12PipelineState> pso2, 
+		ComPtr<ID3D12DescriptorHeap> &heap,
+		D3D12_CPU_DESCRIPTOR_HANDLE,
+		D3D12_CPU_DESCRIPTOR_HANDLE);
 	void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 
 	ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
@@ -26,7 +36,9 @@ private:
 	UINT vertexOffset;
 	UINT indexCount;
 
-	int currentNumberOfParticles = 4096/2;
+	static const int numberOfParticles = 2760;
+
+	int currentNumberOfParticles = numberOfParticles;
 	
 	ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
 	void CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
@@ -41,7 +53,7 @@ private:
 	void BuildACObjects();
 
 	unsigned long long totalVertexCount;
-	static const int numberOfParticles = 4096 / 2;
+	
 	MeshGeometry *mGeo = nullptr;
 	std::vector<ParticleInfromation*> mParticles;
 	GeometryGenerator generator;
@@ -123,5 +135,5 @@ private:
 
 	void RecordComputeTasks(ComPtr<ID3D12PipelineState>, ComPtr<ID3D12DescriptorHeap>&);
 	void RecordCopyTasks(ComPtr<ID3D12Resource>&, ComPtr<ID3D12PipelineState>);
-	void RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12DescriptorHeap> &);
+	void RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12DescriptorHeap> &, ComPtr<ID3D12RootSignature>);
 };

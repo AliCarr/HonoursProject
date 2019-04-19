@@ -154,29 +154,38 @@ void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 	}
 }
 
-void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12RootSignature> rootSig, ComPtr<ID3D12DescriptorHeap> &heap, ComPtr<ID3D12Resource>&, ComPtr<ID3D12CommandQueue> graphicsQueue, ComPtr<ID3D12Resource>& drawBuffer, ComPtr<ID3D12PipelineState> pso2, ComPtr<ID3D12DescriptorHeap> &heap2)
+void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, 
+								 ComPtr<ID3D12PipelineState> pso, 
+								 ComPtr<ID3D12RootSignature> rootSig,
+								 ComPtr<ID3D12DescriptorHeap> &heap, 
+								 ComPtr<ID3D12Resource> backBuffer,
+								 ComPtr<ID3D12CommandQueue> graphicsQueue, 
+								 ComPtr<ID3D12Resource>& drawBuffer, 
+								 ComPtr<ID3D12PipelineState> pso2, 
+								 ComPtr<ID3D12DescriptorHeap> &heap2, D3D12_CPU_DESCRIPTOR_HANDLE bufferView,
+	D3D12_CPU_DESCRIPTOR_HANDLE depthStencil)
 {
 	bool async = true;
 	if (!async)
 	{
-		// Indicate a state transition on the resource usage.
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = CurrentBackBuffer();
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		//// Indicate a state transition on the resource usage.
+		//D3D12_RESOURCE_BARRIER barrier = {};
+		//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		//barrier.Transition.pResource = backBuffer.Get();
+		//barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		//barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-		mCommandList->ResourceBarrier(1, &barrier);
-		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
-		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+		//list->ResourceBarrier(1, &barrier);
+		//list->ClearRenderTargetView(bufferView, Colors::Black, 0, nullptr);
+		//list->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-		// Specify the buffers we are going to render to.
-		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+		//// Specify the buffers we are going to render to.
+		//list->OMSetRenderTargets(1, &bufferView, true, &depthStencil);
 
-		ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get() };
-		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+		//ID3D12DescriptorHeap* descriptorHeaps[] = { heap2.Get() , heap.Get() };
+		//list->SetDescriptorHeaps(1, descriptorHeaps);
 
 		if (whichHandle == true)
 		{
@@ -214,7 +223,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 		list->SetComputeRootDescriptorTable(2U, uavHandle);
 
 		
-		list->Dispatch(static_cast<int>(ceil( numberOfParticles/ 64)), 1, 1);
+		list->Dispatch(static_cast<int>(ceil( numberOfParticles/ 32)), 1, 1);
 
 		list->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
@@ -224,35 +233,23 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 
 	if (async)
 	{
-		// Indicate a state transition on the resource usage.
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = CurrentBackBuffer();
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-		mCommandList->ResourceBarrier(1, &barrier);
-		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
-		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-		// Specify the buffers we are going to render to.
-		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-
-		ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get() };
-		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-
 		ID3D12CommandAllocator* pCommandAllocator = m_computeAllocators[frameIndex].Get();
 		ID3D12GraphicsCommandList* pCommandList = m_computeCommandLists[frameIndex].Get();
 
 		// Prepare for the next frame.
 		ThrowIfFailed(pCommandAllocator->Reset());
 		ThrowIfFailed(pCommandList->Reset(pCommandAllocator, pso.Get()));
+
+		ID3D12DescriptorHeap* descriptorHeaps[] = { heap2.Get() , heap.Get() };
+		pCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
+
+		/////COMPUTE PHASE//////////////////
 		m_computeCommandQueue->Wait(m_graphicsCopyFences[lastFrameIndex].Get(), m_graphicsCopyFenceValues[lastFrameIndex]);
 		RecordComputeTasks(pso, heap);
 
 		whichHandle = !whichHandle;
+
+		pCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 		ThrowIfFailed(pCommandList->Close());
 
@@ -264,6 +261,7 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 
 		++m_computeFenceValue;
 
+		/////COPY PHASE/////////////
 		RecordCopyTasks(drawBuffer, pso2);
 
 		ppCommandList[0] = { m_graphicsCopyCommandLists[frameIndex].Get() };
@@ -276,7 +274,10 @@ void GPUParticleManager::Execute(ID3D12GraphicsCommandList* list, ComPtr<ID3D12P
 		graphicsQueue->Signal(m_graphicsCopyFences[frameIndex].Get(), m_graphicsCopyFenceValue);
 
 		++m_graphicsCopyFenceValue;
-		RecordRenderTasks(pso2, heap2);
+
+		
+		////////RENDER PHASE////////////////
+		RecordRenderTasks(pso2, heap2, rootSig);
 
 		ppCommandList[0] = { m_graphicsCommandLists[frameIndex].Get() };
 		graphicsQueue->ExecuteCommandLists(1, ppCommandList);
@@ -628,7 +629,7 @@ void GPUParticleManager::RecordCopyTasks(ComPtr<ID3D12Resource>& drawBuffer, Com
 	commandList->ResourceBarrier(2, barriers);
 	ThrowIfFailed(commandList->Close());
 }
-void GPUParticleManager::RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12DescriptorHeap> &heap)
+void GPUParticleManager::RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12DescriptorHeap> &heap, ComPtr<ID3D12RootSignature> sig)
 {
 	ThrowIfFailed(m_graphicsAllocators[frameIndex]->Reset());
 
@@ -636,22 +637,24 @@ void GPUParticleManager::RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComP
 
 	ID3D12GraphicsCommandList* commandList = m_graphicsCommandLists[frameIndex].Get();
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { heap.Get() };
-	m_graphicsCommandLists[frameIndex]->SetDescriptorHeaps(1, descriptorHeaps);
+	commandList->SetPipelineState(pso.Get());
+	commandList->SetComputeRootSignature(sig.Get());
+	ID3D12DescriptorHeap* descriptorHeaps[] = { heap.Get()};
+	commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	m_graphicsCommandLists[frameIndex]->SetGraphicsRootDescriptorTable(1, srvHandle);
+	commandList->SetGraphicsRootDescriptorTable(1U, srvHandle);
 
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
-		m_graphicsCommandLists[frameIndex]->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
+		commandList->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
 
-		m_graphicsCommandLists[frameIndex]->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
-		m_graphicsCommandLists[frameIndex]->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
+		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		m_graphicsCommandLists[frameIndex]->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
+		commandList->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
 
-		m_graphicsCommandLists[frameIndex]->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
+		commandList->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
 			1,
 			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
 			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,

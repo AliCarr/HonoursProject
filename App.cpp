@@ -129,7 +129,7 @@ void App::Draw(const GameTimer& gt)
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 	assert(mSwapChain);
-	ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
+	//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 	ThrowIfFailed(mSwapChain->Present(0, 0));
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
@@ -319,42 +319,52 @@ void App::OnKeyboardInput(const GameTimer& gt)
 
 void App::RecordRenderCommands()
 {
-	// Indicate a state transition on the resource usage.
 	D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = CurrentBackBuffer();
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = CurrentBackBuffer();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get() };
 
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-	// Specify the buffers we are going to render to.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get() };
-	mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 	if (switcher)
 	{
-		gpuPar->Execute(mCommandList.Get(), mPSO["compute"], gpuPar->GetComputeRootSignature().Get(), mComputeHeap, mInputBufferA, mCommandQueue, mInputBufferA, mPSO["renderPSO"],mCbvHeap );
+		gpuPar->Execute(mCommandList.Get(), mPSO["compute"], mRootSignature, mComputeHeap, CurrentBackBuffer(), mCommandQueue, mInputBufferA, mPSO["renderPSO"], mCbvHeap, CurrentBackBufferView(), DepthStencilView());
 
 		mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-		//RecordCopyCommands();
+
+		mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
-		//gpuPar->Render(mCbvHeap);
+		gpuPar->Render(mCbvHeap);
 	}
 
 	if (!switcher)
 	{
+		// Indicate a state transition on the resource usage.
+		
+
+		mCommandList->ResourceBarrier(1, &barrier);
+		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+		// Specify the buffers we are going to render to.
+		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+
+	
+		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+
 		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 		pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
 	}
