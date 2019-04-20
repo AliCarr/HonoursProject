@@ -8,7 +8,7 @@
 #include "Common/Camera.h"
 #include "UI.h"
 #include "GPUParticleManager.h"
-
+#include "ACParticleSystem.h"
 
 class App : public D3DApp
 {
@@ -76,4 +76,6 @@ private:
 	void RecordRenderCommands();
 
 	float timer;
+
+	ACParticleSystem* acSystem;
 };

@@ -64,7 +64,7 @@ App::~App()
 bool App::Initialize()
 {
 	//switcher = false;
-	currentSystem = CPU;
+	currentSystem = AC;
 
 	if (!D3DApp::Initialize())
 		return false;
@@ -79,6 +79,7 @@ bool App::Initialize()
 
 	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo2);
 	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(),  mcsByteCode, mPSO["renderPSO"]);
+	acSystem = new ACParticleSystem(md3dDevice, mCommandList.Get(), mCommandQueue);
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
 
 	ThrowIfFailed(mCommandList->Close());
@@ -103,8 +104,8 @@ void App::Update(const GameTimer& gt)
 
 	switch (currentSystem)
 	{
-		case CPU: pManager->Update(gt.DeltaTime(), mUI->numberOfParticles, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); break;
-		case GPU: break;
+		case CPU: pManager->Update(gt.DeltaTime(), mUI->numberOfParticles, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); 	mUI->GUIUpdate(); break;
+		case GPU:	mUI->GUIUpdate(); break;
 		case AC: break;
 	}
 
@@ -114,7 +115,7 @@ void App::Update(const GameTimer& gt)
 		objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
 	mObjectCB->CopyData(0, objConstants);
 
-	mUI->GUIUpdate();
+
 }
 
 void App::Draw(const GameTimer& gt)
@@ -301,6 +302,7 @@ void App::RecordRenderCommands()
 
 	D3D12_RESOURCE_BARRIER barrier = {};
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 
 	switch (currentSystem)
 	{
@@ -367,7 +369,7 @@ void App::RecordRenderCommands()
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-		ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
+	
 
 		mCommandList->ResourceBarrier(1, &barrier);
 		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
@@ -402,7 +404,27 @@ void App::RecordRenderCommands()
 		break;
 
 
-	case AC: break;
+	case AC:  acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain);
+		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+		//ThrowIfFailed(mDirectCmdListAlloc->Reset());
+		//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO["renderPSO"].Get()));
+
+		////mUI->GUIRender(mCommandList);
+
+		//ThrowIfFailed(mCommandList->Close());
+
+		//// Add the command list to the queue for execution.
+
+		//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+		//assert(mSwapChain);
+		////ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
+		//ThrowIfFailed(mSwapChain->Present(0, 0));
+		//mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+		break;
+
 	}
 
 

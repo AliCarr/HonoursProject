@@ -6,21 +6,14 @@
 class ACParticleSystem
 {
 	public:
-		ACParticleSystem(ComPtr<ID3D12Device> &, ID3D12GraphicsCommandList*, std::unique_ptr<MeshGeometry>&, ComPtr<ID3D12DescriptorHeap>, ComPtr<ID3DBlob>, ComPtr<ID3D12PipelineState > &);
+		ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, ComPtr<ID3D12CommandQueue> &graphicsQueue);
 		~ACParticleSystem();
 
 		void Render(ComPtr<ID3D12DescriptorHeap> &heap);
-		void Execute(ID3D12GraphicsCommandList*,
-			ComPtr<ID3D12PipelineState>,
-			ComPtr<ID3D12RootSignature>,
-			ComPtr<ID3D12DescriptorHeap>&,
-			ComPtr<ID3D12Resource>,
-			ComPtr<ID3D12CommandQueue>,
-			ComPtr<ID3D12Resource>& drawBuffer,
-			ComPtr<ID3D12PipelineState> pso2,
-			ComPtr<ID3D12DescriptorHeap> &heap,
-			D3D12_CPU_DESCRIPTOR_HANDLE,
-			D3D12_CPU_DESCRIPTOR_HANDLE);
+
+		void Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
+			ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> mSwapChain);
+
 		void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 
 		ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
@@ -78,15 +71,12 @@ class ACParticleSystem
 		ComPtr<ID3D12Resource> inputParticleBuffer2;
 		ComPtr<ID3D12Resource> outputParticleBuffer;
 		ComPtr<ID3D12Resource> uploadParticleBuffer;
+		ComPtr<ID3D12Resource> uploadParticleBuffer2;
 
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 
 		Microsoft::WRL::ComPtr<ID3D12Device> md3ddevice;
 		ID3D12GraphicsCommandList* list;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuSrv;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE mhCpuUav;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuSrv;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE mhGpuUav;
 
 		std::unique_ptr<UploadBuffer<Vertex>> uploader = nullptr;
 		bool whichHandle = false;
@@ -120,7 +110,6 @@ class ACParticleSystem
 		ComPtr<ID3D12Fence> m_frameFences[FrameCount];
 		HANDLE m_frameFenceEvents[FrameCount];
 
-
 		ComPtr<ID3D12CommandAllocator> m_graphicsAllocators[FrameCount];
 		ComPtr<ID3D12GraphicsCommandList> m_graphicsCommandLists[FrameCount];
 		ComPtr<ID3D12CommandAllocator> m_graphicsCopyAllocators[FrameCount];
@@ -135,7 +124,35 @@ class ACParticleSystem
 
 		UINT64 frameIndex, lastFrameIndex;
 
-		void RecordComputeTasks(ComPtr<ID3D12PipelineState>, ComPtr<ID3D12DescriptorHeap>&);
-		void RecordCopyTasks(ComPtr<ID3D12Resource>&, ComPtr<ID3D12PipelineState>);
-		void RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12DescriptorHeap> &, ComPtr<ID3D12RootSignature>);
+		void RecordComputeTasks();
+		void RecordCopyTasks(ComPtr<ID3D12Resource>&);
+		void RecordRenderTasks();
+		ComPtr<ID3D12PipelineState> pso, computePso;
+		ComPtr<ID3D12DescriptorHeap> computeHeap, cbvHeap;
+		ComPtr<ID3D12RootSignature> renderSig, computeSig;
+
+		void BuildHeaps();
+		void BuildPSOs();
+		void BuildRootSignatures();
+
+		ComPtr<ID3DBlob> mcsByteCode = nullptr;
+		ComPtr<ID3DBlob> mvsByteCode = nullptr;
+		ComPtr<ID3DBlob> mpsByteCode = nullptr;
+		std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
+		ID3D12DescriptorHeap* descriptorHeaps[2];
+		void BuildConstantBuffers();
+
+		std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
+		Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
+
+		//void WaitForFence(ID3D12Fence* fence, UINT64 fenceValue, HANDLE fenceEvent);
+
+		ComPtr<ID3D12GraphicsCommandList> m_uploadCommandList;
+		ComPtr<ID3D12CommandAllocator> m_uploadCommandAllocator;
+		ComPtr<ID3D12Fence> m_uploadFence;
+		HANDLE m_uploadEvent;
+		UINT64 m_uploadFenceValue;
+
+		ComPtr<ID3D12CommandQueue> mGraphicsQueue;
+
 };

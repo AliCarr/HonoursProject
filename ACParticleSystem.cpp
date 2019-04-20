@@ -1,10 +1,36 @@
 #include "ACParticleSystem.h"
 
-ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh, ComPtr<ID3D12DescriptorHeap> mComputeHeap, ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO)
+namespace 
+{
+	void WaitForFence(ID3D12Fence* fence, UINT64 fenceValue, HANDLE fenceEvent)
+	{
+		if (fence->GetCompletedValue() < fenceValue) {
+			ThrowIfFailed(fence->SetEventOnCompletion(fenceValue, fenceEvent));
+			WaitForSingleObject(fenceEvent, INFINITE);
+		}
+	}
+}
+
+ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, ComPtr<ID3D12CommandQueue> &graphicsQueue)
 {
 	md3ddevice = device;
-	CreateRootSignatures();
+	BuildRootSignatures();
 	GenerateParticleMesh(device, commandList);
+	m_queryReadbackIndex = -(static_cast<int> (FrameCount));
+
+	ZeroMemory(m_computeFenceValues, sizeof(m_computeFenceValues));
+	ZeroMemory(m_graphicsFenceValues, sizeof(m_graphicsFenceValues));
+	ZeroMemory(m_graphicsCopyFenceValues, sizeof(m_graphicsCopyFenceValues));
+
+
+	m_computeFenceValue = 1;
+	m_graphicsFenceValue = 1;
+	m_graphicsCopyFenceValue = 1;
+
+	m_queryReadbackIndex = -(static_cast<int> (FrameCount));
+
+	//m_frameTimeNextEntry = 0;
+	//m_frameTimeEntryCount = 0;
 
 	//Random offsets need to be as random as possible to prevent grid effect
 	srand((unsigned)time(&mTime));
@@ -44,39 +70,64 @@ ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device,
 		data->velocity = par->velocity;
 		data->energy = 1;
 		particleInputeData.push_back(std::move(*data));
-
+		
 
 	}
+	mGraphicsQueue = graphicsQueue;
+
 	frameIndex = 0;
 	lastFrameIndex = 0;
-
+	BuildHeaps();
 	BuildResources();
 	list = commandList;
-	BuildDescriptors(md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), mComputeHeap, commandList);
-	BuildPSO(mcsByteCode, mPSO);
+	BuildDescriptors(md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), computeHeap, commandList);
+	BuildPSOs();
 	BuildACObjects();
+
 }
 
 
 ACParticleSystem::~ACParticleSystem()
 {
+	for (int i = 0; i < FrameCount; ++i) {
+	
+			WaitForFence(m_computeFences[i].Get(),
+				m_computeFenceValues[i], m_computeFenceEvents[i]);
+			WaitForFence(m_graphicsFences[i].Get(),
+				m_graphicsFenceValues[i], m_graphicsFenceEvents[i]);
+			WaitForFence(m_graphicsCopyFences[i].Get(),
+				m_graphicsCopyFenceValues[i], m_graphicsCopyFenceEvents[i]);
+	
+
+		WaitForFence(m_frameFences[i].Get(),
+			m_frameFenceValues[i], m_frameFenceEvents[i]);
+	}
+
+	// Close handles to fence events.
+	for (int i = 0; i < FrameCount; ++i) {
+		CloseHandle(m_computeFenceEvents[i]);
+		CloseHandle(m_graphicsFenceEvents[i]);
+		CloseHandle(m_graphicsCopyFenceEvents[i]);
+		CloseHandle(m_frameFenceEvents[i]);
+	}
+
 }
 
 void ACParticleSystem::CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList)
 {
 }
 
-void ACParticleSystem::BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO)
-{
-	D3D12_COMPUTE_PIPELINE_STATE_DESC computePSO = {};
-	computePSO.pRootSignature = mComputeRootSignature.Get();
-	computePSO.CS =
-	{
-		reinterpret_cast<BYTE*>(mcsByteCode->GetBufferPointer()),
-		mcsByteCode->GetBufferSize()
-	};
-	ThrowIfFailed(md3ddevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&mPSO)));
-}
+//void ACParticleSystem::BuildPSO(ComPtr<ID3DBlob> mcsByteCode)
+//{
+//	D3D12_COMPUTE_PIPELINE_STATE_DESC computePSO = {};
+//	computePSO.pRootSignature = mComputeRootSignature.Get();
+//	computePSO.CS =
+//	{
+//		reinterpret_cast<BYTE*>(mcsByteCode->GetBufferPointer()),
+//		mcsByteCode->GetBufferSize()
+//	};
+//	ThrowIfFailed(md3ddevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&pso)));
+//}
 
 //Called after "true" random is initialised 
 XMFLOAT3 ACParticleSystem::StartingVelocity()
@@ -92,47 +143,6 @@ XMFLOAT3 ACParticleSystem::StartingPosition()
 	return XMFLOAT3{ ((float)(rand() % 400)) / 500.0f,
 		((float)(rand() % 400)) / 400.0f,
 		((float)(rand() % 400)) / 500.0f };
-}
-
-void ACParticleSystem::CreateRootSignatures()
-{
-
-	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[4];
-
-	CD3DX12_DESCRIPTOR_RANGE ranges[4];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
-	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1); //Changes table number, but not element in table
-
-	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
-	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
-	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
-	computeSlotRootParameter[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
-
-	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(4, computeSlotRootParameter,
-		0, nullptr);
-
-	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
-	ComPtr<ID3DBlob> computeSerializedRootSig = nullptr;
-	ComPtr<ID3DBlob> computeErrorBlob = nullptr;
-	HRESULT computehr = D3D12SerializeRootSignature(&computeRootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-		computeSerializedRootSig.GetAddressOf(), computeErrorBlob.GetAddressOf());
-
-	if (computeErrorBlob != nullptr)
-	{
-		::OutputDebugStringA((char*)computeErrorBlob->GetBufferPointer());
-	}
-
-	ThrowIfFailed(md3ddevice->CreateRootSignature(
-		0,
-		computeSerializedRootSig->GetBufferPointer(),
-		computeSerializedRootSig->GetBufferSize(),
-		IID_PPV_ARGS(mComputeRootSignature.GetAddressOf())));
-
-	mComputeRootSignature->SetName(L"Compute Root Signature");
 }
 
 void ACParticleSystem::Render(ComPtr<ID3D12DescriptorHeap> &heap)
@@ -154,104 +164,29 @@ void ACParticleSystem::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 	}
 }
 
-void ACParticleSystem::Execute(ID3D12GraphicsCommandList* list,
-	ComPtr<ID3D12PipelineState> pso,
-	ComPtr<ID3D12RootSignature> rootSig,
-	ComPtr<ID3D12DescriptorHeap> &heap,
-	ComPtr<ID3D12Resource> backBuffer,
-	ComPtr<ID3D12CommandQueue> graphicsQueue,
-	ComPtr<ID3D12Resource>& drawBuffer,
-	ComPtr<ID3D12PipelineState> pso2,
-	ComPtr<ID3D12DescriptorHeap> &heap2, D3D12_CPU_DESCRIPTOR_HANDLE bufferView,
-	D3D12_CPU_DESCRIPTOR_HANDLE depthStencil)
+void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
+							   ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> mSwapChain)
 {
-	bool async = true;
-	if (!async)
-	{
-		//// Indicate a state transition on the resource usage.
-		//D3D12_RESOURCE_BARRIER barrier = {};
-		//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		//barrier.Transition.pResource = backBuffer.Get();
-		//barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		//barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		//ID3D12CommandAllocator* pCommandAllocator = m_computeAllocators[frameIndex].Get();
+		//ID3D12GraphicsCommandList* pCommandList = m_computeCommandLists[frameIndex].Get();
 
-		//list->ResourceBarrier(1, &barrier);
-		//list->ClearRenderTargetView(bufferView, Colors::Black, 0, nullptr);
-		//list->ClearDepthStencilView(depthStencil, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+		//// Prepare for the next frame.
+		//ThrowIfFailed(pCommandAllocator->Reset());
+		//ThrowIfFailed(pCommandList->Reset(pCommandAllocator, pso.Get()));
 
-		//// Specify the buffers we are going to render to.
-		//list->OMSetRenderTargets(1, &bufferView, true, &depthStencil);
-
-		//ID3D12DescriptorHeap* descriptorHeaps[] = { heap2.Get() , heap.Get() };
-		//list->SetDescriptorHeaps(1, descriptorHeaps);
-
-		if (whichHandle == true)
-		{
-			SRV = 1U;
-			UAV = 3U;
-			pUavResource = inputParticleBuffer.Get();
-		}
-		else
-		{
-			SRV = 0U;
-			UAV = 2U;
-			pUavResource = outputParticleBuffer.Get();
-		}
-
-		whichHandle = !whichHandle;
-		list->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
-				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-		list->SetPipelineState(pso.Get());
-		list->SetComputeRootSignature(mComputeRootSignature.Get());
-
-		//Set heaps
-		ID3D12DescriptorHeap* ppHeaps[] = { heap.Get() };
-		list->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-		m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
-
-		//set compute root descriptor table
-		list->SetComputeRootDescriptorTable(0U, srvHandle);
-		list->SetComputeRootDescriptorTable(2U, uavHandle);
-
-
-		list->Dispatch(static_cast<int>(ceil(numberOfParticles / 32)), 1, 1);
-
-		list->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-				D3D12_RESOURCE_STATE_COPY_SOURCE));
-	}
-
-	if (async)
-	{
-		ID3D12CommandAllocator* pCommandAllocator = m_computeAllocators[frameIndex].Get();
-		ID3D12GraphicsCommandList* pCommandList = m_computeCommandLists[frameIndex].Get();
-
-		// Prepare for the next frame.
-		ThrowIfFailed(pCommandAllocator->Reset());
-		ThrowIfFailed(pCommandList->Reset(pCommandAllocator, pso.Get()));
-
-		ID3D12DescriptorHeap* descriptorHeaps[] = { heap2.Get() , heap.Get() };
-		pCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
+		//descriptorHeaps[0] = cbvHeap.Get() ;
+		//descriptorHeaps[1] = computeHeap.Get();
+		//pCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
 
 		/////COMPUTE PHASE//////////////////
 		m_computeCommandQueue->Wait(m_graphicsCopyFences[lastFrameIndex].Get(), m_graphicsCopyFenceValues[lastFrameIndex]);
-		RecordComputeTasks(pso, heap);
+		RecordComputeTasks();
 
 		whichHandle = !whichHandle;
 
-		pCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+		//pCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-		ThrowIfFailed(pCommandList->Close());
+		//ThrowIfFailed(pCommandList->Close());
 
 		ID3D12CommandList* ppCommandList[] = { m_computeCommandLists[frameIndex].Get() };
 
@@ -261,9 +196,10 @@ void ACParticleSystem::Execute(ID3D12GraphicsCommandList* list,
 
 		++m_computeFenceValue;
 
-		/////COPY PHASE/////////////
-		RecordCopyTasks(drawBuffer, pso2);
 
+		/////COPY PHASE/////////////
+		RecordCopyTasks(drawBuffer);
+		ThrowIfFailed(m_graphicsCopyCommandLists[frameIndex].Get()->Close());
 		ppCommandList[0] = { m_graphicsCopyCommandLists[frameIndex].Get() };
 
 		graphicsQueue->Wait(m_computeFences[frameIndex].Get(), m_computeFenceValues[frameIndex]);
@@ -277,7 +213,7 @@ void ACParticleSystem::Execute(ID3D12GraphicsCommandList* list,
 
 
 		////////RENDER PHASE////////////////
-		RecordRenderTasks(pso2, heap2, rootSig);
+		RecordRenderTasks();
 
 		ppCommandList[0] = { m_graphicsCommandLists[frameIndex].Get() };
 		graphicsQueue->ExecuteCommandLists(1, ppCommandList);
@@ -286,8 +222,84 @@ void ACParticleSystem::Execute(ID3D12GraphicsCommandList* list,
 		graphicsQueue->Signal(m_graphicsFences[frameIndex].Get(), m_graphicsFenceValue);
 
 		++m_graphicsFenceValue;
-	}
+
+		mSwapChain->Present(0, 0);
+
+
+
+		// Assign the current fence value to the current frame.
+		m_frameFenceValues[frameIndex] = m_frameFenceValue;
+
+		// Signal and increment the fence value.
+		ThrowIfFailed(graphicsQueue->Signal(m_frameFences[frameIndex].Get(), m_frameFenceValue));
+		++m_frameFenceValue;
+
+
+
+		// Update the frame index.
+		lastFrameIndex = frameIndex;
+		frameIndex += 1;
+
+		if (frameIndex >= 4)
+			frameIndex = 0;
+		// If the next frame is not ready to be rendered yet, wait until it is ready.
+		WaitForFence(m_frameFences[frameIndex].Get(),
+			m_frameFenceValues[frameIndex], m_frameFenceEvents[frameIndex]);
+
+		// Update query
+	//++m_queryReadbackIndex;
+
+		// This is trailing behind, assuming frame count = 4
+		// frameIndex:     0  1  2  3
+		// readbackIndex: -3 -2 -1  0
+		//                          \- Trigger readback of frame 0 now
+		//							We just waited for it to finish, so this is
+		//							safe, and we have not issued the query for
+		//							the next frame yet which will overwrite slot 0
+
+		//if (m_queryReadbackIndex >= FrameCount) {
+		//	m_queryReadbackIndex = 0;
+		//}
+
+		//if (m_queryReadbackIndex >= 0) {
+		//	void* mapping = nullptr;
+		//	m_timeQueryReadbackBuffer[m_queryReadbackIndex]->Map(0, &CD3DX12_RANGE(0, sizeof(UINT64)), &mapping);
+		//	::memcpy(m_queryResults + m_queryReadbackIndex, mapping, sizeof(UINT64));
+		//	m_timeQueryReadbackBuffer[m_queryReadbackIndex]->Unmap(0, nullptr);
+
+		//	// Time is now previous to current
+		//	int previousQueryIndex = m_queryReadbackIndex - 1;
+		//	if (previousQueryIndex < 0) {
+		//		previousQueryIndex += FrameCount;
+		//	}
+
+		//	//const double diffMs = static_cast<double>(m_queryResults[m_queryReadbackIndex] - m_queryResults[previousQueryIndex])
+		//	//	/ static_cast<double> (m_frequency) * 1000;
+
+		//	//m_frametimes[m_frametimenextentry] = diffms;
+		//	//++m_frametimenextentry;
+		//	//if (m_frametimenextentry >= m_frametimes.size()) 
+		//	//{
+		//	//	m_frametimenextentry = 0;
+		//	//}
+		//	//++m_frametimeentrycount;
+
+		//	//const auto validentrycount = std::min(static_cast<size_t> (m_frametimeentrycount), m_frametimes.size());
+		//	//const auto sum = std::accumulate(m_frametimes.begin(),
+		//	//	m_frametimes.begin() + validentrycount, 0.0);
+
+		//	//const auto averagediffms = sum / validentrycount;
+
+		//}
 }
+
+//void ACParticleSystem::WaitForFence(ID3D12Fence* fence, UINT64 fenceValue, HANDLE fenceEvent)
+//{
+//	if (fence->GetCompletedValue() < fenceValue) {
+//		ThrowIfFailed(fence->SetEventOnCompletion(fenceValue, fenceEvent));
+//		WaitForSingleObject(fenceEvent, INFINITE);
+//	}
+//}
 
 void ACParticleSystem::BuildResources()
 {
@@ -315,14 +327,6 @@ void ACParticleSystem::BuildResources()
 		nullptr,
 		IID_PPV_ARGS(&inputParticleBuffer));
 
-	md3ddevice->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&inputParticleBuffer2));
-
 	//create the output buffer using the desc above
 	md3ddevice->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -341,6 +345,14 @@ void ACParticleSystem::BuildResources()
 		nullptr,
 		IID_PPV_ARGS(&uploadParticleBuffer));
 
+	ThrowIfFailed(md3ddevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&uploadBufferDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&uploadParticleBuffer2)));
+
 	//Set names for debugging
 	inputParticleBuffer->SetName(L"Input Particle Buffer");
 	outputParticleBuffer->SetName(L"Output Particle Buffer");
@@ -355,6 +367,8 @@ void ACParticleSystem::BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12Descri
 	particleDataSub.SlicePitch = sizeof(particleDataSub);
 
 	UpdateSubresources<1>(list, inputParticleBuffer.Get(), uploadParticleBuffer.Get(), 0, 0, 1, &particleDataSub);
+	UpdateSubresources<1>(list, outputParticleBuffer.Get(), uploadParticleBuffer2.Get(), 0, 0, 1, &particleDataSub);
+	//UpdateSubresources<1>(list, uploadParticleBuffer.Get(), uploadParticleBuffer.Get(), 0, 0, 1, &particleDataSub);
 	list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
 	m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -548,13 +562,25 @@ void ACParticleSystem::BuildACObjects()
 		ThrowIfFailed(md3ddevice->CreateFence(m_computeFenceValues[i], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeFences[i])));
 		m_computeFenceEvents[i] = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	}
+
+	m_uploadFenceValue = 0;
+	ThrowIfFailed(md3ddevice->CreateFence(m_uploadFenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_uploadFence)));
+
+	m_uploadEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+	mGraphicsQueue->Signal(m_uploadFence.Get(), 1);
+	WaitForFence(m_uploadFence.Get(), 1, m_uploadEvent);
 }
 
-void ACParticleSystem::RecordComputeTasks(ComPtr<ID3D12PipelineState>pso, ComPtr<ID3D12DescriptorHeap>&heap)
+void ACParticleSystem::RecordComputeTasks()
 {
+	ID3D12CommandAllocator* pCommandAllocator = m_computeAllocators[frameIndex].Get();
 	ID3D12GraphicsCommandList* pCommandList = m_computeCommandLists[frameIndex].Get();
 
-	for (int c = 0; c < 1; c++)
+	ThrowIfFailed(pCommandAllocator->Reset());
+	ThrowIfFailed(pCommandList->Reset(pCommandAllocator, computePso.Get()));
+
+	for (int c = 0; c < 8; c++)
 	{
 		if (whichHandle == true)
 		{
@@ -578,13 +604,13 @@ void ACParticleSystem::RecordComputeTasks(ComPtr<ID3D12PipelineState>pso, ComPtr
 		pCommandList->SetComputeRootSignature(mComputeRootSignature.Get());
 
 		//Set heaps
-		ID3D12DescriptorHeap* ppHeaps[] = { heap.Get() };
+		ID3D12DescriptorHeap* ppHeaps[] = { computeHeap.Get() };
 		pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 		m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(heap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(computeHeap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(computeHeap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
 
 		//set compute root descriptor table
 		pCommandList->SetComputeRootDescriptorTable(0U, srvHandle);
@@ -598,38 +624,39 @@ void ACParticleSystem::RecordComputeTasks(ComPtr<ID3D12PipelineState>pso, ComPtr
 				D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 	}
+
+	ThrowIfFailed(pCommandList->Close());
 }
 
-void ACParticleSystem::RecordCopyTasks(ComPtr<ID3D12Resource>& drawBuffer, ComPtr<ID3D12PipelineState> pso)
+void ACParticleSystem::RecordCopyTasks(ComPtr<ID3D12Resource>& drawBuffer)
 {
 	ThrowIfFailed(m_graphicsCopyAllocators[frameIndex]->Reset());
 	ThrowIfFailed(m_graphicsCopyCommandLists[frameIndex]->Reset(m_graphicsCopyAllocators[frameIndex].Get(), pso.Get()));
-
+	
 	ID3D12GraphicsCommandList* commandList = m_graphicsCopyCommandLists[frameIndex].Get();
 
+
 	D3D12_RESOURCE_BARRIER barriers[2];
-	barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
-		pUavResource,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_COPY_SOURCE);
+
 
 	commandList->ResourceBarrier(1, barriers);
-	commandList->CopyResource(drawBuffer.Get(), pUavResource);
+	commandList->CopyResource(mInputBufferA.Get(), pUavResource);
 
 	barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
 		pUavResource,
 		D3D12_RESOURCE_STATE_COPY_SOURCE,
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
 	barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
-		drawBuffer.Get(),
+		mInputBufferA.Get(),
 		D3D12_RESOURCE_STATE_COPY_DEST,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
-	);
+		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 	commandList->ResourceBarrier(2, barriers);
-	ThrowIfFailed(commandList->Close());
+
+	//ThrowIfFailed(commandList->Close());
 }
-void ACParticleSystem::RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr<ID3D12DescriptorHeap> &heap, ComPtr<ID3D12RootSignature> sig)
+void ACParticleSystem::RecordRenderTasks()
 {
 	ThrowIfFailed(m_graphicsAllocators[frameIndex]->Reset());
 
@@ -637,13 +664,15 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr
 
 	ID3D12GraphicsCommandList* commandList = m_graphicsCommandLists[frameIndex].Get();
 
-	commandList->SetPipelineState(pso.Get());
-	commandList->SetComputeRootSignature(sig.Get());
-	ID3D12DescriptorHeap* descriptorHeaps[] = { heap.Get() };
-	commandList->SetDescriptorHeaps(1, descriptorHeaps);
+	//commandList->CopyResource(mInputBufferA.Get(), pUavResource);
 
-	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	commandList->SetGraphicsRootDescriptorTable(1U, srvHandle);
+	commandList->SetPipelineState(pso.Get());
+	commandList->SetComputeRootSignature(renderSig.Get());
+	//ID3D12DescriptorHeap* descriptorHeaps[] = { cbvHeap.Get() };
+	//commandList->SetDescriptorHeaps(1, descriptorHeaps);
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(cbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	commandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
@@ -652,7 +681,7 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr
 		commandList->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
 		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		commandList->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
+		commandList->SetGraphicsRootDescriptorTable(0, cbvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		commandList->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
 			1,
@@ -660,5 +689,213 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<ID3D12PipelineState> pso, ComPtr
 			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
 			0);
 	}
+	ThrowIfFailed(commandList->Close());
+}
 
+void ACParticleSystem::BuildHeaps()
+{
+
+	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
+		computeHeapDesc.NumDescriptors = 4U;
+		computeHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		computeHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(md3ddevice->CreateDescriptorHeap(&computeHeapDesc, IID_PPV_ARGS(&computeHeap)));
+
+
+	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
+	cbvHeapDesc.NumDescriptors = 13; //Originally 11, we're adding 2 more
+	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	cbvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(md3ddevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&cbvHeap)));
+
+
+
+}
+
+void ACParticleSystem::BuildPSOs()
+{
+		mcsByteCode = d3dUtil::CompileShader(L"Shaders\\particleCS.hlsl", nullptr, "UpdateWavesCS", "cs_5_0");
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC computePSO = {};
+		computePSO.pRootSignature = mComputeRootSignature.Get();
+		computePSO.CS =
+		{
+			reinterpret_cast<BYTE*>(mcsByteCode->GetBufferPointer()),
+			mcsByteCode->GetBufferSize()
+		};
+		ThrowIfFailed(md3ddevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&computePso)));
+
+		mvsByteCode = d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl", nullptr, "VS", "vs_5_0");
+		mpsByteCode = d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl", nullptr, "PS", "ps_5_0");
+		mcsByteCode = d3dUtil::CompileShader(L"Shaders\\particleCS.hlsl", nullptr, "UpdateWavesCS", "cs_5_0");
+
+		mInputLayout =
+		{
+			//Semantic Name, Semantic Index, Format, Input slot, Aligned Byte Offset, Input Slot Class, Instance Data Step Rate
+			{ "POSITION", 0,    DXGI_FORMAT_R32G32B32_FLOAT, 0,   0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "ID",		  0,		   DXGI_FORMAT_R16_UINT, 0,  36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		};
+
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
+		ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+		psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+		psoDesc.pRootSignature = renderSig.Get();
+		psoDesc.VS =
+		{
+			reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
+			mvsByteCode->GetBufferSize()
+		};
+		psoDesc.PS =
+		{
+			reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
+			mpsByteCode->GetBufferSize()
+		};
+		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		//psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		psoDesc.SampleMask = UINT_MAX;
+		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		psoDesc.NumRenderTargets = 1;
+		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		psoDesc.SampleDesc.Count = 1;
+		psoDesc.SampleDesc.Quality = 0;
+		psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		ThrowIfFailed(md3ddevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
+}
+
+void ACParticleSystem::BuildRootSignatures()
+{
+	// Root parameter can be a table, root descriptor or root constants.
+	CD3DX12_ROOT_PARAMETER slotRootParameter[2];
+	CD3DX12_DESCRIPTOR_RANGE range[1];
+	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+
+	// Create a single descriptor table of CBVs.
+	CD3DX12_DESCRIPTOR_RANGE cbvTable;
+	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+
+	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
+	slotRootParameter[1].InitAsDescriptorTable(1, &range[0], D3D12_SHADER_VISIBILITY_VERTEX);
+
+	// A root signature is an array of root parameters.
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter, 0, nullptr,
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+	ComPtr<ID3DBlob> serializedRootSig = nullptr;
+	ComPtr<ID3DBlob> errorBlob = nullptr;
+	HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+		serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
+	if (errorBlob != nullptr)
+	{
+		::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+	}
+	ThrowIfFailed(hr);
+
+	ThrowIfFailed(md3ddevice->CreateRootSignature(
+		0,
+		serializedRootSig->GetBufferPointer(),
+		serializedRootSig->GetBufferSize(),
+		IID_PPV_ARGS(&renderSig)));
+
+
+
+	// Root parameter can be a table, root descriptor or root constants.
+	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[4];
+
+	CD3DX12_DESCRIPTOR_RANGE ranges[4];
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1); //Changes table number, but not element in table
+
+	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
+
+	// A root signature is an array of root parameters.
+	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(4, computeSlotRootParameter,
+		0, nullptr);
+
+	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+	ComPtr<ID3DBlob> computeSerializedRootSig = nullptr;
+	ComPtr<ID3DBlob> computeErrorBlob = nullptr;
+	HRESULT computehr = D3D12SerializeRootSignature(&computeRootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+		computeSerializedRootSig.GetAddressOf(), computeErrorBlob.GetAddressOf());
+
+	if (computeErrorBlob != nullptr)
+	{
+		::OutputDebugStringA((char*)computeErrorBlob->GetBufferPointer());
+	}
+
+	ThrowIfFailed(md3ddevice->CreateRootSignature(
+		0,
+		computeSerializedRootSig->GetBufferPointer(),
+		computeSerializedRootSig->GetBufferSize(),
+		IID_PPV_ARGS(mComputeRootSignature.GetAddressOf())));
+
+	mComputeRootSignature->SetName(L"Compute Root Signature");
+}
+
+void ACParticleSystem::BuildConstantBuffers()
+{
+
+	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3ddevice.Get(), 1, true);
+
+	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+
+	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
+	// Offset to the ith object constant buffer in the buffer.
+	int boxCBufIndex = 0;
+	cbAddress += boxCBufIndex * objCBByteSize;
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+	cbvDesc.BufferLocation = cbAddress;
+	cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+	md3ddevice->CreateConstantBufferView(
+		&cbvDesc,
+		cbvHeap->GetCPUDescriptorHandleForHeapStart());
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = 2000;
+	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+	D3D12_RESOURCE_DESC bufferDesc;
+	ZeroMemory(&bufferDesc, sizeof(D3D12_RESOURCE_DESC));
+	bufferDesc.Alignment = 0;
+	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	bufferDesc.Width = 2000 * sizeof(ComputeData);
+	bufferDesc.Height = 1;
+	bufferDesc.DepthOrArraySize = 1;
+	bufferDesc.MipLevels = 1;
+	bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; //used for buffers as texture data can be located in them without creating a texture object
+	bufferDesc.SampleDesc.Count = 1;
+
+	md3ddevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&mInputBufferA));
+
+	mInputBufferA->SetName(L"Draw Buffer");
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(cbvHeap->GetCPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	md3ddevice->CreateShaderResourceView(mInputBufferA.Get(), &srvDesc, srvHandle);
 }
