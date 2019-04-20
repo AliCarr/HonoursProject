@@ -143,7 +143,7 @@ class ACParticleSystem
 		void BuildConstantBuffers();
 
 		std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
-		Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
+		ComPtr<ID3D12Resource> mInputBufferA = nullptr;
 
 		//void WaitForFence(ID3D12Fence* fence, UINT64 fenceValue, HANDLE fenceEvent);
 
