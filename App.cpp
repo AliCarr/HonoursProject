@@ -85,6 +85,8 @@ bool App::Initialize()
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
+
+	timer = 0;
 	return true;
 }
 
@@ -111,6 +113,15 @@ void App::Update(const GameTimer& gt)
 	mObjectCB->CopyData(0, objConstants);
 
 	mUI->GUIUpdate();
+
+	timer += gt.DeltaTime();
+	
+	if (timer >= 5)
+	{
+		currentSystem = GPU;
+		switcher = true;
+	}
+
 }
 
 void App::Draw(const GameTimer& gt)

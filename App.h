@@ -74,4 +74,6 @@ private:
 	Systems currentSystem;
 
 	void RecordRenderCommands();
+
+	float timer;
 };
