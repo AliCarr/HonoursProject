@@ -35,14 +35,13 @@ private:
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
-	void BuildBuffers();
 
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 	ComPtr<ID3D12RootSignature> mImGuiRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
-	ComPtr<ID3D12DescriptorHeap> mComputeHeap = nullptr;
+	
 	ComPtr<ID3D12DescriptorHeap> mImGUIHeap = nullptr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
@@ -71,8 +70,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
 	bool switcher;
 
+	enum Systems { CPU, GPU, AC };
+	Systems currentSystem;
+
 	void RecordRenderCommands();
-	void RecordCopyCommands();
-	void RecordComputeCommands();
-	void CreateLists();
 };

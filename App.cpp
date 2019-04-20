@@ -63,7 +63,8 @@ App::~App()
 
 bool App::Initialize()
 {
-	switcher = true;
+	switcher = false;
+	currentSystem = CPU;
 
 	if (!D3DApp::Initialize())
 		return false;
@@ -77,7 +78,7 @@ bool App::Initialize()
 	BuildPSO();
 
 	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo2);
-	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo, mComputeHeap, mcsByteCode, mPSO["compute"]);
+	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(),  mcsByteCode, mPSO["renderPSO"]);
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
 
 	ThrowIfFailed(mCommandList->Close());
@@ -91,7 +92,6 @@ void App::OnResize()
 {
 	D3DApp::OnResize();
 	mControl->OnResize(AspectRatio());
-
 }
 
 void App::Update(const GameTimer& gt)
@@ -99,8 +99,10 @@ void App::Update(const GameTimer& gt)
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
 
-	if (!switcher)
-		pManager->Update(gt.DeltaTime(), mCommandList, md3dDevice, mUI->numberOfParticles);
+	switch (currentSystem)
+	{
+		case CPU: pManager->Update(gt.DeltaTime(), mUI->numberOfParticles, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); break;
+	}
 
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
@@ -116,10 +118,10 @@ void App::Draw(const GameTimer& gt)
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO["renderPSO"].Get()));
 
-		mCommandList->RSSetViewports(1, &mScreenViewport);
-		mCommandList->RSSetScissorRects(1, &mScissorRect);
+	mCommandList->RSSetViewports(1, &mScreenViewport);
+	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
-		RecordRenderCommands();
+	RecordRenderCommands();
 
 	// Done recording commands.
 	ThrowIfFailed(mCommandList->Close());
@@ -145,14 +147,8 @@ void App::BuildDescriptorHeaps()
 		cbvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,IID_PPV_ARGS(&mCbvHeap)));
 
-	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
-		computeHeapDesc.NumDescriptors = 4U;
-		computeHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		computeHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&computeHeapDesc, IID_PPV_ARGS(&mComputeHeap)));
-
 	mCbvHeap->SetName(L"Constant Buffer Heap");
-	mComputeHeap->SetName(L"Compute Heap");
+
 }
 
 void App::BuildConstantBuffers()
@@ -316,18 +312,17 @@ void App::OnKeyboardInput(const GameTimer& gt)
 	mControl->OnKeyboardInput(gt.DeltaTime());
 }
 
-
 void App::RecordRenderCommands()
 {
 	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = CurrentBackBuffer();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = CurrentBackBuffer();
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() , mComputeHeap.Get() };
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 
 	mCommandList->ResourceBarrier(1, &barrier);
 	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
@@ -336,16 +331,12 @@ void App::RecordRenderCommands()
 
 	if (switcher)
 	{
-		gpuPar->Execute(mCommandList.Get(), mPSO["compute"], mRootSignature, mComputeHeap, CurrentBackBuffer(), mCommandQueue, mInputBufferA, mPSO["renderPSO"], mCbvHeap, CurrentBackBufferView(), DepthStencilView());
+		gpuPar->Execute();
 
 		mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-
 		mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
-
-		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-		mCommandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
 		gpuPar->Render(mCbvHeap);
 	}
@@ -353,35 +344,17 @@ void App::RecordRenderCommands()
 	if (!switcher)
 	{
 		// Indicate a state transition on the resource usage.
-		
-
 		mCommandList->ResourceBarrier(1, &barrier);
 		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 		// Specify the buffers we are going to render to.
 		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-
-	
 		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-		pManager->Render(mCommandList, mCbvHeap, mCbvSrvUavDescriptorSize, md3dDevice);
+		pManager->Render( mCbvHeap);
 	}
 
 	mCommandList->ResourceBarrier(1, &barrier);
-
 	mUI->GUIRender(mCommandList);
-}
-void App::RecordCopyCommands()
-{
-	//mCommandList->CopyResource(mInputBufferA.Get(), gpuPar->pUavResource);
-}
-void App::RecordComputeCommands()
-{
-	
-}
-void App::CreateLists()
-{
-
 }

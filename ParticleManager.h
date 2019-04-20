@@ -13,19 +13,14 @@ public:
 
 	~ParticleManager();
 
-	void Update(float, 
-				Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, 
-				Microsoft::WRL::ComPtr<ID3D12Device> &, int);
+	void Update(float,  int, DirectX::XMMATRIX);
 
-	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, 
-				ComPtr<ID3D12DescriptorHeap>&, 
-				UINT, 
-				Microsoft::WRL::ComPtr<ID3D12Device> &);
+	void Render(ComPtr<ID3D12DescriptorHeap>&);
 
-private: //Constants
+private: 
 	static const int numberOfParticles = 2046;
 	int currentNumberOfParticles = 2046;
-	//Constants for the particles mesh
+
 	const float width = 0.004f;
 	const float depth = 0.004f;
 	const UINT32 rows = 2;
@@ -44,6 +39,8 @@ private: //Constants
 						UploadBuffer<Vertex>*);
 
 	void ParticleReset(int);
+	void BuildHeap();
+
 	XMFLOAT3 StartingVelocity();
 	XMFLOAT3 StartingPosition();
 
@@ -62,5 +59,13 @@ private: //Constants
 
 	std::unique_ptr<UploadBuffer<Vertex>> temp = nullptr;
 
-	//std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
+	ComPtr<ID3D12Device> md3ddevice;
+	ID3D12GraphicsCommandList* list;
+	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
+	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
+
+	void BuildPSO();
+	void BuildRootSignature();
+	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
+	ComPtr<ID3D12PipelineState> pso;
 };
