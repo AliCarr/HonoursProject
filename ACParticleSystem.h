@@ -65,7 +65,7 @@ class ACParticleSystem
 		XMFLOAT3 StartingVelocity();
 		XMFLOAT3 StartingPosition();
 		UINT m_srvUavDescriptorSize;
-		ComPtr<ID3D12Resource> m_particleBufferForDraw;
+
 
 		ComPtr<ID3D12Resource> inputParticleBuffer;
 		ComPtr<ID3D12Resource> inputParticleBuffer2;
@@ -126,7 +126,7 @@ class ACParticleSystem
 
 		void RecordComputeTasks();
 		void RecordCopyTasks(ComPtr<ID3D12Resource>&);
-		void RecordRenderTasks();
+		void RecordRenderTasks(ComPtr<IDXGISwapChain>);
 		ComPtr<ID3D12PipelineState> pso, computePso;
 		ComPtr<ID3D12DescriptorHeap> computeHeap, cbvHeap;
 		ComPtr<ID3D12RootSignature> renderSig, computeSig;
@@ -143,7 +143,7 @@ class ACParticleSystem
 		void BuildConstantBuffers();
 
 		std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
-		ComPtr<ID3D12Resource> mInputBufferA = nullptr;
+		ComPtr<ID3D12Resource> m_particleBufferForDraw;
 
 		//void WaitForFence(ID3D12Fence* fence, UINT64 fenceValue, HANDLE fenceEvent);
 

@@ -82,6 +82,7 @@ ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device,
 	list = commandList;
 	BuildDescriptors(md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), computeHeap, commandList);
 	BuildPSOs();
+	BuildConstantBuffers();
 	BuildACObjects();
 
 }
@@ -155,26 +156,13 @@ void ACParticleSystem::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 							   ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> mSwapChain)
 {
-		//ID3D12CommandAllocator* pCommandAllocator = m_computeAllocators[frameIndex].Get();
-		//ID3D12GraphicsCommandList* pCommandList = m_computeCommandLists[frameIndex].Get();
 
-		//// Prepare for the next frame.
-		//ThrowIfFailed(pCommandAllocator->Reset());
-		//ThrowIfFailed(pCommandList->Reset(pCommandAllocator, pso.Get()));
-
-		//descriptorHeaps[0] = cbvHeap.Get() ;
-		//descriptorHeaps[1] = computeHeap.Get();
-		//pCommandList->SetDescriptorHeaps(1, descriptorHeaps + 1);
 
 		/////COMPUTE PHASE//////////////////
 		m_computeCommandQueue->Wait(m_graphicsCopyFences[lastFrameIndex].Get(), m_graphicsCopyFenceValues[lastFrameIndex]);
 		RecordComputeTasks();
 
 		whichHandle = !whichHandle;
-
-		//pCommandList->SetDescriptorHeaps(1, descriptorHeaps);
-
-		//ThrowIfFailed(pCommandList->Close());
 
 		ID3D12CommandList* ppCommandList[] = { m_computeCommandLists[frameIndex].Get() };
 
@@ -187,7 +175,7 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 
 		/////COPY PHASE/////////////
 		RecordCopyTasks(drawBuffer);
-		//ThrowIfFailed(m_graphicsCopyCommandLists[frameIndex].Get()->Close());
+
 		ppCommandList[0] = { m_graphicsCopyCommandLists[frameIndex].Get() };
 
 		graphicsQueue->Wait(m_computeFences[frameIndex].Get(), m_computeFenceValues[frameIndex]);
@@ -201,7 +189,7 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 
 
 		////////RENDER PHASE////////////////
-		RecordRenderTasks();
+		RecordRenderTasks(mSwapChain);
 
 		ppCommandList[0] = { m_graphicsCommandLists[frameIndex].Get() };
 		graphicsQueue->ExecuteCommandLists(1, ppCommandList);
@@ -213,16 +201,12 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 
 		mSwapChain->Present(0, 0);
 
-
-
 		// Assign the current fence value to the current frame.
 		m_frameFenceValues[frameIndex] = m_frameFenceValue;
 
 		// Signal and increment the fence value.
 		ThrowIfFailed(graphicsQueue->Signal(m_frameFences[frameIndex].Get(), m_frameFenceValue));
 		++m_frameFenceValue;
-
-
 
 		// Update the frame index.
 		lastFrameIndex = frameIndex;
@@ -303,7 +287,7 @@ void ACParticleSystem::BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12Descri
 	particleDataSub.SlicePitch = sizeof(particleDataSub);
 
 	UpdateSubresources<1>(list, inputParticleBuffer.Get(), uploadParticleBuffer.Get(), 0, 0, 1, &particleDataSub);
-	UpdateSubresources<1>(list, outputParticleBuffer.Get(), uploadParticleBuffer2.Get(), 0, 0, 1, &particleDataSub);
+//	UpdateSubresources<1>(list, outputParticleBuffer.Get(), uploadParticleBuffer2.Get(), 0, 0, 1, &particleDataSub);
 	//UpdateSubresources<1>(list, uploadParticleBuffer.Get(), uploadParticleBuffer.Get(), 0, 0, 1, &particleDataSub);
 	list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
@@ -400,21 +384,6 @@ bool ACParticleSystem::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device>
 	return true;
 }
 
-void ACParticleSystem::UpdatePosition(int current, float time, UploadBuffer<Vertex>* buffer)
-{
-	if (mParticles.at(current)->accelertaion <= 1)
-		mParticles.at(current)->accelertaion += time / 30.0f;
-
-	for (UINT i = 0; i < vertexOffset; i++)
-	{
-		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(time / 1));
-		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(time / 1)) - mParticles.at(current)->accelertaion;
-		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(time / 1));
-		mParticles.at(current)->velocity.x = 0.00f;
-		mParticles.at(current)->velocity.z = 0.00f;
-	}
-
-}
 
 void ACParticleSystem::BuildACObjects()
 {
@@ -536,7 +505,7 @@ void ACParticleSystem::RecordComputeTasks()
 				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-		pCommandList->SetPipelineState(pso.Get());
+		pCommandList->SetPipelineState(computePso.Get());
 		pCommandList->SetComputeRootSignature(mComputeRootSignature.Get());
 
 		//Set heaps
@@ -580,23 +549,23 @@ void ACParticleSystem::RecordCopyTasks(ComPtr<ID3D12Resource>& drawBuffer)
 		D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	pCommandList->ResourceBarrier(1, barriers);
-	//pCommandList->CopyResource(mInputBufferA.Get(), particleBuffer);
+	pCommandList->CopyResource(m_particleBufferForDraw.Get(), pUavResource);
 
 	barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
 		particleBuffer,
 		D3D12_RESOURCE_STATE_COPY_SOURCE,
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-	//barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
-	//	mInputBufferA.Get(),
-	//	D3D12_RESOURCE_STATE_COPY_DEST,
-	//	D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_particleBufferForDraw.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-	pCommandList->ResourceBarrier(1, barriers);
+	pCommandList->ResourceBarrier(2, barriers);
 
 	ThrowIfFailed(pCommandList->Close());
 }
-void ACParticleSystem::RecordRenderTasks()
+void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> chain)
 {
 	ThrowIfFailed(m_graphicsAllocators[frameIndex]->Reset());
 
@@ -604,15 +573,17 @@ void ACParticleSystem::RecordRenderTasks()
 
 	ID3D12GraphicsCommandList* commandList = m_graphicsCommandLists[frameIndex].Get();
 
-	//commandList->CopyResource(mInputBufferA.Get(), pUavResource);
+	//commandList->CopyResource(m_particleBufferForDraw.Get(), pUavResource);
 
 	commandList->SetPipelineState(pso.Get());
-	commandList->SetComputeRootSignature(renderSig.Get());
-	//ID3D12DescriptorHeap* descriptorHeaps[] = { cbvHeap.Get() };
-	//commandList->SetDescriptorHeaps(1, descriptorHeaps);
+	commandList->SetGraphicsRootSignature(renderSig.Get());
+	//commandList->SetComputeRootSignature(renderSig.Get());
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { cbvHeap.Get() };
+	commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(cbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	commandList->SetGraphicsRootDescriptorTable(1, srvHandle);
+	commandList->SetGraphicsRootDescriptorTable(1U, srvHandle);
 
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
@@ -629,6 +600,15 @@ void ACParticleSystem::RecordRenderTasks()
 			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
 			0);
 	}
+
+	D3D12_RESOURCE_BARRIER barriers[1];
+	barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_particleBufferForDraw.Get(),
+		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_COPY_DEST);
+
+
+	commandList->ResourceBarrier(1, barriers);
 	ThrowIfFailed(commandList->Close());
 }
 
@@ -643,7 +623,7 @@ void ACParticleSystem::BuildHeaps()
 
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-	cbvHeapDesc.NumDescriptors = 11; //Originally 11, we're adding 2 more
+	cbvHeapDesc.NumDescriptors = 13; //Originally 11, we're adding 2 more
 	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	cbvHeapDesc.NodeMask = 0;
@@ -809,7 +789,7 @@ void ACParticleSystem::BuildConstantBuffers()
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = 2000;
+	srvDesc.Buffer.NumElements = numberOfParticles;
 	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
@@ -818,7 +798,7 @@ void ACParticleSystem::BuildConstantBuffers()
 	bufferDesc.Alignment = 0;
 	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	bufferDesc.Width = 2000 * sizeof(ComputeData);
+	bufferDesc.Width = numberOfParticles * sizeof(ComputeData);
 	bufferDesc.Height = 1;
 	bufferDesc.DepthOrArraySize = 1;
 	bufferDesc.MipLevels = 1;
@@ -832,10 +812,10 @@ void ACParticleSystem::BuildConstantBuffers()
 		&bufferDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
-		IID_PPV_ARGS(&mInputBufferA));
+		IID_PPV_ARGS(&m_particleBufferForDraw));
 
-	mInputBufferA->SetName(L"Draw Buffer");
+	m_particleBufferForDraw->SetName(L"Draw Buffer");
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(cbvHeap->GetCPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	md3ddevice->CreateShaderResourceView(mInputBufferA.Get(), &srvDesc, srvHandle);
+	md3ddevice->CreateShaderResourceView(m_particleBufferForDraw.Get(), &srvDesc, srvHandle);
 }

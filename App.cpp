@@ -159,7 +159,7 @@ void App::BuildConstantBuffers()
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = 2000;
+	srvDesc.Buffer.NumElements = 2760;
 	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
@@ -168,7 +168,7 @@ void App::BuildConstantBuffers()
 	bufferDesc.Alignment = 0;
 	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	bufferDesc.Width = 2000 * sizeof(ComputeData);
+	bufferDesc.Width = 2760 * sizeof(ComputeData); //Change this to numberOfParticles
 	bufferDesc.Height = 1;
 	bufferDesc.DepthOrArraySize = 1;
 	bufferDesc.MipLevels = 1;
@@ -405,23 +405,11 @@ void App::RecordRenderCommands()
 
 
 	case AC:  acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain);
+		//assert(mSwapChain);
+		//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
+		//ThrowIfFailed(mSwapChain->Present(0, 0));
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
-		//ThrowIfFailed(mDirectCmdListAlloc->Reset());
-		//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO["renderPSO"].Get()));
-
-		////mUI->GUIRender(mCommandList);
-
-		//ThrowIfFailed(mCommandList->Close());
-
-		//// Add the command list to the queue for execution.
-
-		//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-		//assert(mSwapChain);
-		////ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
-		//ThrowIfFailed(mSwapChain->Present(0, 0));
-		//mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
 		break;
 

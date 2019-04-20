@@ -8,7 +8,6 @@ struct ComputeData
 };
 
 StructuredBuffer<ComputeData> gInput	:	register(t0);
-StructuredBuffer<ComputeData> gInput2	:	register(t1);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
 
 float2 rand_2_0004(in float2 uv)
@@ -18,7 +17,9 @@ float2 rand_2_0004(in float2 uv)
 	return float2(noiseX, noiseY) * 0.04;
 }
 
-[numthreads(100, 10, 1)]
+//
+
+[numthreads(33, 1, 1)]
 void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 {
 	gOutput[dispatchThreadID.x] = gInput[dispatchThreadID.x];

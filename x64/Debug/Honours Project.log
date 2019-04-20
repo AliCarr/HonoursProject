@@ -1,5 +1,5 @@
 ﻿  ACParticleSystem.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(50): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(51): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(52): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Debug\Honours Project.exe
+c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(50): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(51): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(52): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\x64\Debug\Honours Project.exe
