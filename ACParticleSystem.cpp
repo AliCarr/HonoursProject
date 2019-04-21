@@ -485,7 +485,7 @@ void ACParticleSystem::RecordComputeTasks()
 	ThrowIfFailed(pCommandAllocator->Reset());
 	ThrowIfFailed(pCommandList->Reset(pCommandAllocator, computePso.Get()));
 
-	for (int c = 0; c < 4; c++)
+	for (int c = 0; c < 200; c++)
 	{
 		if (whichHandle == true)
 		{

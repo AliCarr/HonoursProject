@@ -154,6 +154,8 @@ void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 
 void GPUParticleManager::Execute()
 {
+	for (int c = 0; c < 200; c++)
+	{
 		if (whichHandle == true)
 		{
 			SRV = 1U;
@@ -188,13 +190,14 @@ void GPUParticleManager::Execute()
 		//set compute root descriptor table
 		list->SetComputeRootDescriptorTable(0U, srvHandle);
 		list->SetComputeRootDescriptorTable(2U, uavHandle);
-		
-		list->Dispatch(static_cast<int>(ceil( numberOfParticles/ 32)), 1, 1);
+
+		list->Dispatch(static_cast<int>(ceil(numberOfParticles / 32)), 1, 1);
 
 		list->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 				D3D12_RESOURCE_STATE_COPY_SOURCE));
+	}
 }
 
 void GPUParticleManager::BuildResources()
