@@ -12,7 +12,7 @@ class ACParticleSystem
 		void Render(ComPtr<ID3D12DescriptorHeap> &heap);
 
 		void Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
-			ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> mSwapChain);
+			ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER&, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView);
 
 		void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 
@@ -21,7 +21,7 @@ class ACParticleSystem
 
 		ID3D12Resource *pUavResource;
 
-
+		void Update(ObjectConstants);
 
 	private:
 		static const int FrameCount = 4;
@@ -126,7 +126,7 @@ class ACParticleSystem
 
 		void RecordComputeTasks();
 		void RecordCopyTasks(ComPtr<ID3D12Resource>&);
-		void RecordRenderTasks(ComPtr<IDXGISwapChain>);
+		void RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView);
 		ComPtr<ID3D12PipelineState> pso, computePso;
 		ComPtr<ID3D12DescriptorHeap> computeHeap, cbvHeap;
 		ComPtr<ID3D12RootSignature> renderSig, computeSig;

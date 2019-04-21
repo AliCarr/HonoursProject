@@ -22,18 +22,13 @@ ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device,
 	ZeroMemory(m_graphicsFenceValues, sizeof(m_graphicsFenceValues));
 	ZeroMemory(m_graphicsCopyFenceValues, sizeof(m_graphicsCopyFenceValues));
 
-
 	m_computeFenceValue = 1;
 	m_graphicsFenceValue = 1;
 	m_graphicsCopyFenceValue = 1;
 
-	m_queryReadbackIndex = -(static_cast<int> (FrameCount));
-
-	//m_frameTimeNextEntry = 0;
-	//m_frameTimeEntryCount = 0;
-
 	//Random offsets need to be as random as possible to prevent grid effect
 	srand((unsigned)time(&mTime));
+
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
 		auto par = new ParticleInfromation();
@@ -87,7 +82,6 @@ ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device,
 
 }
 
-
 ACParticleSystem::~ACParticleSystem()
 {
 	for (int i = 0; i < FrameCount; ++i) {
@@ -114,10 +108,6 @@ ACParticleSystem::~ACParticleSystem()
 
 }
 
-void ACParticleSystem::CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList)
-{
-}
-
 //Called after "true" random is initialised 
 XMFLOAT3 ACParticleSystem::StartingVelocity()
 {
@@ -134,30 +124,33 @@ XMFLOAT3 ACParticleSystem::StartingPosition()
 		((float)(rand() % 400)) / 500.0f };
 }
 
-void ACParticleSystem::Render(ComPtr<ID3D12DescriptorHeap> &heap)
+void ACParticleSystem::Update(ObjectConstants constants)
 {
-	for (int c = 0; c < currentNumberOfParticles; c++)
-	{
-		list->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
-
-		list->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
-		list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		list->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
-
-		list->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
-			1,
-			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
-			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
-			0);
-	}
+	mObjectCB->CopyData(0, constants);
 }
 
+//void ACParticleSystem::Render(ComPtr<ID3D12DescriptorHeap> &heap)
+//{
+//	for (int c = 0; c < currentNumberOfParticles; c++)
+//	{
+//		list->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
+//
+//		list->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
+//		list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//
+//		list->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
+//
+//		list->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
+//			1,
+//			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
+//			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
+//			0);
+//	}
+//}
+
 void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
-							   ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> mSwapChain)
+							   ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER& bar2, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView)
 {
-
-
 		/////COMPUTE PHASE//////////////////
 		m_computeCommandQueue->Wait(m_graphicsCopyFences[lastFrameIndex].Get(), m_graphicsCopyFenceValues[lastFrameIndex]);
 		RecordComputeTasks();
@@ -189,7 +182,9 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 
 
 		////////RENDER PHASE////////////////
-		RecordRenderTasks(mSwapChain);
+
+
+		RecordRenderTasks(mSwapChain, bar, bar2, backView, depthView);
 
 		ppCommandList[0] = { m_graphicsCommandLists[frameIndex].Get() };
 		graphicsQueue->ExecuteCommandLists(1, ppCommandList);
@@ -199,7 +194,6 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 
 		++m_graphicsFenceValue;
 
-		mSwapChain->Present(0, 0);
 
 		// Assign the current fence value to the current frame.
 		m_frameFenceValues[frameIndex] = m_frameFenceValue;
@@ -207,6 +201,10 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 		// Signal and increment the fence value.
 		ThrowIfFailed(graphicsQueue->Signal(m_frameFences[frameIndex].Get(), m_frameFenceValue));
 		++m_frameFenceValue;
+
+		assert(mSwapChain);
+
+		ThrowIfFailed(mSwapChain->Present(0, 0));
 
 		// Update the frame index.
 		lastFrameIndex = frameIndex;
@@ -219,7 +217,6 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 			m_frameFenceValues[frameIndex], m_frameFenceEvents[frameIndex]);
 
 }
-
 
 void ACParticleSystem::BuildResources()
 {
@@ -383,7 +380,6 @@ bool ACParticleSystem::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device>
 
 	return true;
 }
-
 
 void ACParticleSystem::BuildACObjects()
 {
@@ -565,7 +561,7 @@ void ACParticleSystem::RecordCopyTasks(ComPtr<ID3D12Resource>& drawBuffer)
 
 	ThrowIfFailed(pCommandList->Close());
 }
-void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> chain)
+void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER& bar2, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView)
 {
 	ThrowIfFailed(m_graphicsAllocators[frameIndex]->Reset());
 
@@ -573,11 +569,15 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> chain)
 
 	ID3D12GraphicsCommandList* commandList = m_graphicsCommandLists[frameIndex].Get();
 
-	//commandList->CopyResource(m_particleBufferForDraw.Get(), pUavResource);
+	commandList->ResourceBarrier(1, &bar);
+	commandList->ClearRenderTargetView(backView, Colors::Black, 0, nullptr);
+	commandList->ClearDepthStencilView(depthView, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	commandList->OMSetRenderTargets(1, &backView, true, &depthView);
+
+
 
 	commandList->SetPipelineState(pso.Get());
 	commandList->SetGraphicsRootSignature(renderSig.Get());
-	//commandList->SetComputeRootSignature(renderSig.Get());
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { cbvHeap.Get() };
 	commandList->SetDescriptorHeaps(1, descriptorHeaps);
@@ -607,6 +607,11 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> chain)
 		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_COPY_DEST);
 
+	//mUI->GUIRender(commandList);
+
+	commandList->ResourceBarrier(1, &bar2);
+
+	
 
 	commandList->ResourceBarrier(1, barriers);
 	ThrowIfFailed(commandList->Close());

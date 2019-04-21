@@ -101,19 +101,21 @@ void App::Update(const GameTimer& gt)
 {
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
-
-	switch (currentSystem)
-	{
-		case CPU: pManager->Update(gt.DeltaTime(), mUI->numberOfParticles, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); 	mUI->GUIUpdate(); break;
-		case GPU:	mUI->GUIUpdate(); break;
-		case AC: break;
-	}
-
+	
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
 		objConstants.yPosiiton += gt.DeltaTime();
 		objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
 	mObjectCB->CopyData(0, objConstants);
+
+	switch (currentSystem)
+	{
+		case CPU: pManager->Update(gt.DeltaTime(), mUI->numberOfParticles, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); 	mUI->GUIUpdate(); break;
+		case GPU:	mUI->GUIUpdate(); break;
+		case AC: acSystem->Update(objConstants); break;
+	}
+
+
 
 
 }
@@ -301,6 +303,7 @@ void App::RecordRenderCommands()
 {
 
 	D3D12_RESOURCE_BARRIER barrier = {};
+	D3D12_RESOURCE_BARRIER barrier2 = {};
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 
@@ -404,12 +407,27 @@ void App::RecordRenderCommands()
 		break;
 
 
-	case AC:  acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain);
-		//assert(mSwapChain);
-		//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
-		//ThrowIfFailed(mSwapChain->Present(0, 0));
-		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+	case AC:  
+		
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = CurrentBackBuffer();
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
+		barrier2.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier2.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier2.Transition.pResource = CurrentBackBuffer();
+		barrier2.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier2.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier2.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+
+		acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain, barrier, barrier2, CurrentBackBufferView(), DepthStencilView());
+
+		
+		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
 		break;
 
