@@ -42,6 +42,7 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 			data->acceleration = XMFLOAT3(0, 0, 0);
 			data->position = par->position;
 			data->velocity = par->velocity;
+			data->initialVelocity = par->velocity;
 			data->energy = par->energy = ((float)(rand() % 100)) / 100.0f;
 		particleInputeData.push_back(std::move(*data));
 	}

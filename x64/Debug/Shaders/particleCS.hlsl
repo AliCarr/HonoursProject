@@ -4,10 +4,14 @@ struct ComputeData
 	float3 position;
 	float3 velocity;
 	float3 acceleration;
+	float3 initialVelocity;
 	float energy;
+	//float buffer;
+	//float fdsa;
 };
 
 StructuredBuffer<ComputeData> gInput	:	register(t0);
+StructuredBuffer<ComputeData> gInput2	:	register(t1);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
 
 float2 rand_2_0004(in float2 uv)
@@ -17,9 +21,7 @@ float2 rand_2_0004(in float2 uv)
 	return float2(noiseX, noiseY) * 0.04;
 }
 
-//
-
-[numthreads(33, 1, 1)]
+[numthreads(32, 1, 1)]
 void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 {
 	gOutput[dispatchThreadID.x] = gInput[dispatchThreadID.x];
@@ -42,6 +44,7 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 		gOutput[dispatchThreadID.x].velocity += gInput[dispatchThreadID.x].velocity / 1000;
 	}
 
+
 	if (gOutput[dispatchThreadID.x].acceleration.y <= 0.1)
 	{
 		gOutput[dispatchThreadID.x].acceleration += deltaTime / 10;
@@ -54,6 +57,7 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 		gOutput[dispatchThreadID.x].position.y = 0;
 		gOutput[dispatchThreadID.x].position.z = 0;
 		gOutput[dispatchThreadID.x].energy = 1;
+		//gOutput[dispatchThreadID.x].velocity = gInput[dispatchThreadID.x].initialVelocity;
 	}
 
 

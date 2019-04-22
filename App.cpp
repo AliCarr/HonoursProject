@@ -86,7 +86,6 @@ bool App::Initialize()
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	FlushCommandQueue();
 
-	timer = 0;
 	return true;
 }
 
@@ -141,7 +140,6 @@ void App::BuildConstantBuffers()
 	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 
 	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
-	// Offset to the ith object constant buffer in the buffer.
 	int boxCBufIndex = 0;
 	cbAddress += boxCBufIndex * objCBByteSize;
 
@@ -246,30 +244,30 @@ void App::BuildShadersAndInputLayout()
 void App::BuildPSO()
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
-	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-	psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
-	psoDesc.pRootSignature = mRootSignature.Get();
-	psoDesc.VS =
-	{
-		reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
-		mvsByteCode->GetBufferSize()
-	};
-	psoDesc.PS =
-	{
-		reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
-		mpsByteCode->GetBufferSize()
-	};
-	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = mBackBufferFormat;
-	psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
-	psoDesc.DSVFormat = mDepthStencilFormat;
+		ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+		psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+		psoDesc.pRootSignature = mRootSignature.Get();
+		psoDesc.VS =
+		{
+			reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
+			mvsByteCode->GetBufferSize()
+		};
+		psoDesc.PS =
+		{
+			reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
+			mpsByteCode->GetBufferSize()
+		};
+		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		psoDesc.SampleMask = UINT_MAX;
+		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		psoDesc.NumRenderTargets = 1;
+		psoDesc.RTVFormats[0] = mBackBufferFormat;
+		psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
+		psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+		psoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO["renderPSO"])));
 }
 
@@ -295,10 +293,16 @@ void App::OnKeyboardInput(const GameTimer& gt)
 
 void App::RecordRenderCommands()
 {
-	D3D12_RESOURCE_BARRIER barrier = {};
 	D3D12_RESOURCE_BARRIER barrier2 = {};
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
+	D3D12_RESOURCE_BARRIER barrier = {};
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = CurrentBackBuffer();
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	switch (currentSystem)
 	{
@@ -309,33 +313,17 @@ void App::RecordRenderCommands()
 		mCommandList->RSSetViewports(1, &mScreenViewport);
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
 
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = CurrentBackBuffer();
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
 		mCommandList->ResourceBarrier(1, &barrier);
 		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-
-		// Indicate a state transition on the resource usage.
-		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
-		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-		// Specify the buffers we are going to render to.
 		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
 		pManager->Render(mCbvHeap);
 		mCommandList->ResourceBarrier(1, &barrier);
-		// Done recording commands.
 		mUI->GUIRender(mCommandList);
 
 		ThrowIfFailed(mCommandList->Close());
 
-		// Add the command list to the queue for execution.
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		assert(mSwapChain);
@@ -354,13 +342,6 @@ void App::RecordRenderCommands()
 		mCommandList->RSSetViewports(1, &mScreenViewport);
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
 
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = CurrentBackBuffer();
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
 		mCommandList->ResourceBarrier(1, &barrier);
 		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
 		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
@@ -375,17 +356,14 @@ void App::RecordRenderCommands()
 
 		gpuPar->Render(mCbvHeap);
 		mCommandList->ResourceBarrier(1, &barrier);
-		// Done recording commands.
 		mUI->GUIRender(mCommandList);
 
 		ThrowIfFailed(mCommandList->Close());
 
 		// Add the command list to the queue for execution.
-	
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		assert(mSwapChain);
-		//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 		ThrowIfFailed(mSwapChain->Present(0, 0));
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 		
@@ -395,13 +373,6 @@ void App::RecordRenderCommands()
 
 
 	case AC:  
-		
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = CurrentBackBuffer();
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 		barrier2.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier2.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -416,9 +387,5 @@ void App::RecordRenderCommands()
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
 		break;
-
 	}
-
-
-
 }

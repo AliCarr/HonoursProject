@@ -20,7 +20,7 @@ public:
 
 	virtual bool Initialize()override;
 
-private:
+private: //Functions
 	virtual void OnResize()override;
 	virtual void Update(const GameTimer& gt)override;
 	virtual void Draw(const GameTimer& gt)override;
@@ -35,47 +35,38 @@ private:
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
 	void BuildPSO();
+	void RecordRenderCommands();
 
 private:
-
+	//Dx12 Objects
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-	ComPtr<ID3D12RootSignature> mImGuiRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
-	
-	ComPtr<ID3D12DescriptorHeap> mImGUIHeap = nullptr;
+	ComPtr<ID3D12Resource> mInputBufferA = nullptr;
+	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSO;
+	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 
+	//Shader codes
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
 	ComPtr<ID3DBlob> mcsByteCode = nullptr;
-	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSO;
-
-	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
+	
+	//Mesh Geometries
 	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
 	std::unique_ptr<MeshGeometry> mBoxGeo2 = nullptr;
+
+	//Vectors
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
-
-	POINT mLastMousePos;
-
-	const std::string MODEL_PATH = "Assets/Mount Wario.obj";
-	const std::string TEXTURE_PATH = "Assets/chalet.jpg";
-
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 
-	Controls *mControl;
-	ParticleManager* pManager;
-	UI *mUI;
-	GPUParticleManager* gpuPar;
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputBufferA = nullptr;
-	bool switcher;
-
+	//Statemachine data
 	enum Systems { CPU, GPU, AC };
 	Systems currentSystem;
 
-	void RecordRenderCommands();
-
-	float timer;
-
+	//System Objects
+	UI *mUI;
+	Controls *mControl;
+	ParticleManager* pManager;
+	GPUParticleManager* gpuPar;
 	ACParticleSystem* acSystem;
 };

@@ -9,6 +9,7 @@ public:
 	Controls();
 	~Controls();
 
+	//Functions
 	void OnMouseDown(WPARAM btnState, int x, int y, HWND);
 	void OnMouseUp(WPARAM btnState, int x, int y);
 	void OnMouseMove(WPARAM btnState, int x, int y);

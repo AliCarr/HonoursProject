@@ -25,6 +25,7 @@ struct particleData
 	float3 position;
 	float3 velocity;
 	float3 acceleration;
+	float3 initialVelocity;
 	float energy;
 };
 
