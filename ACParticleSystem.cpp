@@ -16,7 +16,7 @@ ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device,
 	md3ddevice = device;
 	BuildRootSignatures();
 	GenerateParticleMesh(device, commandList);
-	m_queryReadbackIndex = -(static_cast<int> (FrameCount));
+	//m_queryReadbackIndex = -(static_cast<int> (FrameCount));
 
 	ZeroMemory(m_computeFenceValues, sizeof(m_computeFenceValues));
 	ZeroMemory(m_graphicsFenceValues, sizeof(m_graphicsFenceValues));
@@ -93,7 +93,6 @@ ACParticleSystem::~ACParticleSystem()
 			WaitForFence(m_graphicsCopyFences[i].Get(),
 				m_graphicsCopyFenceValues[i], m_graphicsCopyFenceEvents[i]);
 	
-
 		WaitForFence(m_frameFences[i].Get(),
 			m_frameFenceValues[i], m_frameFenceEvents[i]);
 	}
@@ -129,33 +128,12 @@ void ACParticleSystem::Update(ObjectConstants constants)
 	mObjectCB->CopyData(0, constants);
 }
 
-//void ACParticleSystem::Render(ComPtr<ID3D12DescriptorHeap> &heap)
-//{
-//	for (int c = 0; c < currentNumberOfParticles; c++)
-//	{
-//		list->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
-//
-//		list->IASetIndexBuffer(&mParticles.at(c)->geo->IndexBufferView());
-//		list->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-//
-//		list->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
-//
-//		list->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
-//			1,
-//			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
-//			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
-//			0);
-//	}
-//}
-
 void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
-							   ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER& bar2, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView)
+							   ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER& bar2, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView, D3D12_VIEWPORT &viewPort, D3D12_RECT &rect)
 {
 		/////COMPUTE PHASE//////////////////
 		m_computeCommandQueue->Wait(m_graphicsCopyFences[lastFrameIndex].Get(), m_graphicsCopyFenceValues[lastFrameIndex]);
 		RecordComputeTasks();
-
-		whichHandle = !whichHandle;
 
 		ID3D12CommandList* ppCommandList[] = { m_computeCommandLists[frameIndex].Get() };
 
@@ -171,12 +149,12 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 
 		ppCommandList[0] = { m_graphicsCopyCommandLists[frameIndex].Get() };
 
-		graphicsQueue->Wait(m_computeFences[frameIndex].Get(), m_computeFenceValues[frameIndex]);
+		mGraphicsQueue->Wait(m_computeFences[frameIndex].Get(), m_computeFenceValues[frameIndex]);
 
-		graphicsQueue->ExecuteCommandLists(1, ppCommandList);
+		mGraphicsQueue->ExecuteCommandLists(1, ppCommandList);
 
 		m_graphicsCopyFenceValues[frameIndex] = m_graphicsCopyFenceValue;
-		graphicsQueue->Signal(m_graphicsCopyFences[frameIndex].Get(), m_graphicsCopyFenceValue);
+		mGraphicsQueue->Signal(m_graphicsCopyFences[frameIndex].Get(), m_graphicsCopyFenceValue);
 
 		++m_graphicsCopyFenceValue;
 
@@ -184,13 +162,13 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 		////////RENDER PHASE////////////////
 
 
-		RecordRenderTasks(mSwapChain, bar, bar2, backView, depthView);
+		RecordRenderTasks(mSwapChain, bar, bar2, backView, depthView, viewPort, rect);
 
 		ppCommandList[0] = { m_graphicsCommandLists[frameIndex].Get() };
-		graphicsQueue->ExecuteCommandLists(1, ppCommandList);
+		mGraphicsQueue->ExecuteCommandLists(1, ppCommandList);
 
 		m_graphicsFenceValues[frameIndex] = m_graphicsFenceValue;
-		graphicsQueue->Signal(m_graphicsFences[frameIndex].Get(), m_graphicsFenceValue);
+		mGraphicsQueue->Signal(m_graphicsFences[frameIndex].Get(), m_graphicsFenceValue);
 
 		++m_graphicsFenceValue;
 
@@ -199,12 +177,10 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 		m_frameFenceValues[frameIndex] = m_frameFenceValue;
 
 		// Signal and increment the fence value.
-		ThrowIfFailed(graphicsQueue->Signal(m_frameFences[frameIndex].Get(), m_frameFenceValue));
+		ThrowIfFailed(mGraphicsQueue->Signal(m_frameFences[frameIndex].Get(), m_frameFenceValue));
 		++m_frameFenceValue;
 
-		assert(mSwapChain);
-
-		ThrowIfFailed(mSwapChain->Present(0, 0));
+	
 
 		// Update the frame index.
 		lastFrameIndex = frameIndex;
@@ -216,22 +192,26 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 		WaitForFence(m_frameFences[frameIndex].Get(),
 			m_frameFenceValues[frameIndex], m_frameFenceEvents[frameIndex]);
 
+		assert(mSwapChain);
+
+		ThrowIfFailed(mSwapChain->Present(0, 0));
+
 }
 
 void ACParticleSystem::BuildResources()
 {
 	D3D12_RESOURCE_DESC bufferDesc;
-	ZeroMemory(&bufferDesc, sizeof(D3D12_RESOURCE_DESC));
-	bufferDesc.Alignment = 0;
-	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	bufferDesc.Width = numberOfParticles * sizeof(ComputeData);
-	bufferDesc.Height = 1;
-	bufferDesc.DepthOrArraySize = 1;
-	bufferDesc.MipLevels = 1;
-	bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; //used for buffers as texture data can be located in them without creating a texture object
-	bufferDesc.SampleDesc.Count = 1;
+		ZeroMemory(&bufferDesc, sizeof(D3D12_RESOURCE_DESC));
+		bufferDesc.Alignment = 0;
+		bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		bufferDesc.Width = numberOfParticles * sizeof(ComputeData);
+		bufferDesc.Height = 1;
+		bufferDesc.DepthOrArraySize = 1;
+		bufferDesc.MipLevels = 1;
+		bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+		bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; //used for buffers as texture data can be located in them without creating a texture object
+		bufferDesc.SampleDesc.Count = 1;
 
 	D3D12_RESOURCE_DESC uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(numberOfParticles * sizeof(ComputeData));
 
@@ -279,42 +259,39 @@ void ACParticleSystem::BuildResources()
 void ACParticleSystem::BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap> &heap, ID3D12GraphicsCommandList* list)
 {
 	D3D12_SUBRESOURCE_DATA particleDataSub = {};
-	particleDataSub.pData = reinterpret_cast<UINT8*>(&particleInputeData[0]);
-	particleDataSub.RowPitch = numberOfParticles * sizeof(ComputeData);
-	particleDataSub.SlicePitch = sizeof(particleDataSub);
+		particleDataSub.pData = reinterpret_cast<UINT8*>(&particleInputeData[0]);
+		particleDataSub.RowPitch = numberOfParticles * sizeof(ComputeData);
+		particleDataSub.SlicePitch = sizeof(particleDataSub);
 
 	UpdateSubresources<1>(list, inputParticleBuffer.Get(), uploadParticleBuffer.Get(), 0, 0, 1, &particleDataSub);
-//	UpdateSubresources<1>(list, outputParticleBuffer.Get(), uploadParticleBuffer2.Get(), 0, 0, 1, &particleDataSub);
-	//UpdateSubresources<1>(list, uploadParticleBuffer.Get(), uploadParticleBuffer.Get(), 0, 0, 1, &particleDataSub);
 	list->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(inputParticleBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
 	m_srvUavDescriptorSize = md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	ThrowIfFailed(md3ddevice->GetDeviceRemovedReason());
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = numberOfParticles;
-	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = numberOfParticles;
+		srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(heap->GetCPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
-	md3ddevice->CreateShaderResourceView(inputParticleBuffer.Get(), &srvDesc, srvHandle);
-	md3ddevice->CreateShaderResourceView(outputParticleBuffer.Get(), &srvDesc, srvHandle.Offset(m_srvUavDescriptorSize));
+		md3ddevice->CreateShaderResourceView(inputParticleBuffer.Get(), &srvDesc, srvHandle);
+		md3ddevice->CreateShaderResourceView(outputParticleBuffer.Get(), &srvDesc, srvHandle.Offset(m_srvUavDescriptorSize));
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavDesc.Buffer.FirstElement = 0;
-	uavDesc.Buffer.NumElements = numberOfParticles;
-	uavDesc.Buffer.StructureByteStride = sizeof(ComputeData);
-	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = numberOfParticles;
+		uavDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), 2U, m_srvUavDescriptorSize);
-	md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle);
-	md3ddevice->CreateUnorderedAccessView(inputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle.Offset(m_srvUavDescriptorSize));
+	CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(heap->GetCPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
+		md3ddevice->CreateUnorderedAccessView(outputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle);
+		md3ddevice->CreateUnorderedAccessView(inputParticleBuffer.Get(), nullptr, &uavDesc, uavHandle.Offset(m_srvUavDescriptorSize));
 }
 
 //Only has to be called once, is then used as the template for each particle
@@ -422,29 +399,6 @@ void ACParticleSystem::BuildACObjects()
 		m_computeCommandLists[i].Get()->SetName(L"Compute Command Lists");
 	}
 
-
-	//Timing objects
-	D3D12_RESOURCE_DESC cpuTimingBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(UINT64));
-
-	for (int i = 0; i < FrameCount; ++i)
-	{
-		md3ddevice->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-			D3D12_HEAP_FLAG_NONE,
-			&cpuTimingBufferDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&m_timeQueryReadbackBuffer[i]));
-	}
-
-	D3D12_QUERY_HEAP_DESC queryHeapDesc = {};
-	queryHeapDesc.Count = FrameCount;
-	queryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
-
-	md3ddevice->CreateQueryHeap(&queryHeapDesc,
-		IID_PPV_ARGS(&m_timeQueryHeap));
-
-	//Set all fence values to the starting values (zero)
 	m_frameFenceValue = 0;
 	for (int i = 0; i < FrameCount; ++i) {
 		m_frameFenceValues[i] = m_frameFenceValue;
@@ -481,7 +435,7 @@ void ACParticleSystem::RecordComputeTasks()
 	ThrowIfFailed(pCommandAllocator->Reset());
 	ThrowIfFailed(pCommandList->Reset(pCommandAllocator, computePso.Get()));
 
-	for (int c = 0; c < 200; c++)
+	for (int c = 0; c < 1; c++)
 	{
 		if (whichHandle == true)
 		{
@@ -517,7 +471,7 @@ void ACParticleSystem::RecordComputeTasks()
 		pCommandList->SetComputeRootDescriptorTable(0U, srvHandle);
 		pCommandList->SetComputeRootDescriptorTable(2U, uavHandle);
 
-		pCommandList->Dispatch(static_cast<int>(ceil(numberOfParticles / 64)), 1, 1);
+		pCommandList->Dispatch(static_cast<int>(ceil(numberOfParticles / 32)), 1, 1);
 
 		pCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(pUavResource,
@@ -525,6 +479,8 @@ void ACParticleSystem::RecordComputeTasks()
 				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
 	}
+
+	whichHandle = !whichHandle;
 
 	ThrowIfFailed(pCommandList->Close());
 }
@@ -561,7 +517,7 @@ void ACParticleSystem::RecordCopyTasks(ComPtr<ID3D12Resource>& drawBuffer)
 
 	ThrowIfFailed(pCommandList->Close());
 }
-void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER& bar2, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView)
+void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER& bar2, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView, D3D12_VIEWPORT &viewPort, D3D12_RECT &rect)
 {
 	ThrowIfFailed(m_graphicsAllocators[frameIndex]->Reset());
 
@@ -569,12 +525,14 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 
 	ID3D12GraphicsCommandList* commandList = m_graphicsCommandLists[frameIndex].Get();
 
+
+	commandList->RSSetViewports(1, &viewPort);
+	commandList->RSSetScissorRects(1, &rect);
+
 	commandList->ResourceBarrier(1, &bar);
 	commandList->ClearRenderTargetView(backView, Colors::Black, 0, nullptr);
 	commandList->ClearDepthStencilView(depthView, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	commandList->OMSetRenderTargets(1, &backView, true, &depthView);
-
-
 
 	commandList->SetPipelineState(pso.Get());
 	commandList->SetGraphicsRootSignature(renderSig.Get());
@@ -609,9 +567,7 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 
 	//mUI->GUIRender(commandList);
 
-	commandList->ResourceBarrier(1, &bar2);
-
-	
+	//commandList->ResourceBarrier(1, &bar);
 
 	commandList->ResourceBarrier(1, barriers);
 	ThrowIfFailed(commandList->Close());
@@ -619,7 +575,6 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 
 void ACParticleSystem::BuildHeaps()
 {
-
 	D3D12_DESCRIPTOR_HEAP_DESC computeHeapDesc = {};
 		computeHeapDesc.NumDescriptors = 4U;
 		computeHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -628,14 +583,11 @@ void ACParticleSystem::BuildHeaps()
 
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-	cbvHeapDesc.NumDescriptors = 13; //Originally 11, we're adding 2 more
-	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	cbvHeapDesc.NodeMask = 0;
+		cbvHeapDesc.NumDescriptors = 13; //Originally 11, we're adding 2 more
+		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		cbvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(md3ddevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&cbvHeap)));
-
-
-
 }
 
 void ACParticleSystem::BuildPSOs()
@@ -653,44 +605,43 @@ void ACParticleSystem::BuildPSOs()
 
 		mvsByteCode = d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl", nullptr, "VS", "vs_5_0");
 		mpsByteCode = d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl", nullptr, "PS", "ps_5_0");
-		mcsByteCode = d3dUtil::CompileShader(L"Shaders\\particleCS.hlsl", nullptr, "UpdateWavesCS", "cs_5_0");
 
 		mInputLayout =
 		{
 			//Semantic Name, Semantic Index, Format, Input slot, Aligned Byte Offset, Input Slot Class, Instance Data Step Rate
 			{ "POSITION", 0,    DXGI_FORMAT_R32G32B32_FLOAT, 0,   0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "ID",		  0,		   DXGI_FORMAT_R16_UINT, 0,  36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+			{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "ID",		  0,		   DXGI_FORMAT_R16_UINT, 0,  36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 		};
 
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
-		ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-		psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
-		psoDesc.pRootSignature = renderSig.Get();
-		psoDesc.VS =
-		{
-			reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
-			mvsByteCode->GetBufferSize()
-		};
-		psoDesc.PS =
-		{
-			reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
-			mpsByteCode->GetBufferSize()
-		};
-		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		//psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
-		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		psoDesc.SampleMask = UINT_MAX;
-		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		psoDesc.NumRenderTargets = 1;
-		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		psoDesc.SampleDesc.Count = 1;
-		psoDesc.SampleDesc.Quality = 0;
-		psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+			psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+			psoDesc.pRootSignature = renderSig.Get();
+			psoDesc.VS =
+			{
+				reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
+				mvsByteCode->GetBufferSize()
+			};
+			psoDesc.PS =
+			{
+				reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
+				mpsByteCode->GetBufferSize()
+			};
+			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			//psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+			psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+			psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			psoDesc.SampleMask = UINT_MAX;
+			psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			psoDesc.NumRenderTargets = 1;
+			psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+			psoDesc.SampleDesc.Count = 1;
+			psoDesc.SampleDesc.Quality = 0;
+			psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		ThrowIfFailed(md3ddevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
 }
 
@@ -736,10 +687,10 @@ void ACParticleSystem::BuildRootSignatures()
 	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[4];
 
 	CD3DX12_DESCRIPTOR_RANGE ranges[4];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
-	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1); //Changes table number, but not element in table
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1); //Changes table number, but not element in table
 
 	computeSlotRootParameter[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
@@ -772,7 +723,6 @@ void ACParticleSystem::BuildRootSignatures()
 
 void ACParticleSystem::BuildConstantBuffers()
 {
-
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3ddevice.Get(), 1, true);
 
 	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
@@ -783,33 +733,33 @@ void ACParticleSystem::BuildConstantBuffers()
 	cbAddress += boxCBufIndex * objCBByteSize;
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-	cbvDesc.BufferLocation = cbAddress;
-	cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-	md3ddevice->CreateConstantBufferView(
-		&cbvDesc,
-		cbvHeap->GetCPUDescriptorHandleForHeapStart());
+		cbvDesc.BufferLocation = cbAddress;
+		cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+		md3ddevice->CreateConstantBufferView(
+			&cbvDesc,
+			cbvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = numberOfParticles;
-	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = numberOfParticles;
+		srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 	D3D12_RESOURCE_DESC bufferDesc;
-	ZeroMemory(&bufferDesc, sizeof(D3D12_RESOURCE_DESC));
-	bufferDesc.Alignment = 0;
-	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	bufferDesc.Width = numberOfParticles * sizeof(ComputeData);
-	bufferDesc.Height = 1;
-	bufferDesc.DepthOrArraySize = 1;
-	bufferDesc.MipLevels = 1;
-	bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; //used for buffers as texture data can be located in them without creating a texture object
-	bufferDesc.SampleDesc.Count = 1;
+		ZeroMemory(&bufferDesc, sizeof(D3D12_RESOURCE_DESC));
+		bufferDesc.Alignment = 0;
+		bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		bufferDesc.Width = numberOfParticles * sizeof(ComputeData);
+		bufferDesc.Height = 1;
+		bufferDesc.DepthOrArraySize = 1;
+		bufferDesc.MipLevels = 1;
+		bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+		bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; //used for buffers as texture data can be located in them without creating a texture object
+		bufferDesc.SampleDesc.Count = 1;
 
 	md3ddevice->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),

@@ -8,43 +8,34 @@ class ACParticleSystem
 	public:
 		ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, ComPtr<ID3D12CommandQueue> &graphicsQueue);
 		~ACParticleSystem();
-
-		void Render(ComPtr<ID3D12DescriptorHeap> &heap);
-
+		void Update(ObjectConstants);
 		void Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
-			ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER&, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView);
-
-		void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
+			ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER&, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView,  D3D12_VIEWPORT &viewPort, D3D12_RECT &rect);
 
 		ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
-		UINT SRV = 0U;
 
-		ID3D12Resource *pUavResource;
 
-		void Update(ObjectConstants);
+
+
 
 	private:
 		static const int FrameCount = 4;
-
+		void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 		time_t mTime;
 		UINT indexOffset;
 		UINT vertexOffset;
 		UINT indexCount;
+		UINT SRV = 0U;
 
-		static const int numberOfParticles = 2760;
+		ID3D12Resource *pUavResource;
+		static const int numberOfParticles = 2000;
 
 		int currentNumberOfParticles = numberOfParticles;
 
 		ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
-		void CreateBuffers(Microsoft::WRL::ComPtr<ID3D12Device> &, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
 
-
-		void CreateRootSignatures();
 		bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList *commandList);
-		void UpdatePosition(int, float, UploadBuffer<Vertex>*);
-		void ParticleReset(int);
 		void BuildResources();
-		void BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO);
 		void BuildACObjects();
 
 		unsigned long long totalVertexCount;
@@ -81,7 +72,7 @@ class ACParticleSystem
 		std::unique_ptr<UploadBuffer<Vertex>> uploader = nullptr;
 		bool whichHandle = false;
 
-		UINT UAV = 1U;
+		UINT UAV = 2U;
 
 		// Compute objects.
 		ComPtr<ID3D12CommandAllocator> m_computeAllocators[FrameCount];
@@ -116,39 +107,36 @@ class ACParticleSystem
 		ComPtr<ID3D12GraphicsCommandList> m_graphicsCopyCommandLists[FrameCount];
 
 		// Timing queries
-		ComPtr<ID3D12QueryHeap> m_timeQueryHeap;
+	/*	ComPtr<ID3D12QueryHeap> m_timeQueryHeap;
 		ComPtr<ID3D12Resource> m_timeQueryReadbackBuffer[FrameCount];
 		UINT64 m_queryResults[FrameCount];
 		int m_queryReadbackIndex;
-		UINT64 m_frequency;
+		UINT64 m_frequency;*/
 
 		UINT64 frameIndex, lastFrameIndex;
 
 		void RecordComputeTasks();
 		void RecordCopyTasks(ComPtr<ID3D12Resource>&);
-		void RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView);
+		void RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView, D3D12_VIEWPORT &viewPort, D3D12_RECT &rect);
+		void BuildHeaps();
+		void BuildPSOs();
+		void BuildRootSignatures();
+		void BuildConstantBuffers();
+
 		ComPtr<ID3D12PipelineState> pso, computePso;
 		ComPtr<ID3D12DescriptorHeap> computeHeap, cbvHeap;
 		ComPtr<ID3D12RootSignature> renderSig, computeSig;
 
-		void BuildHeaps();
-		void BuildPSOs();
-		void BuildRootSignatures();
-
+	
 		ComPtr<ID3DBlob> mcsByteCode = nullptr;
 		ComPtr<ID3DBlob> mvsByteCode = nullptr;
 		ComPtr<ID3DBlob> mpsByteCode = nullptr;
 		std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 		ID3D12DescriptorHeap* descriptorHeaps[2];
-		void BuildConstantBuffers();
 
 		std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 		ComPtr<ID3D12Resource> m_particleBufferForDraw;
 
-		//void WaitForFence(ID3D12Fence* fence, UINT64 fenceValue, HANDLE fenceEvent);
-
-		ComPtr<ID3D12GraphicsCommandList> m_uploadCommandList;
-		ComPtr<ID3D12CommandAllocator> m_uploadCommandAllocator;
 		ComPtr<ID3D12Fence> m_uploadFence;
 		HANDLE m_uploadEvent;
 		UINT64 m_uploadFenceValue;

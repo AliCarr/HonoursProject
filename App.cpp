@@ -424,7 +424,7 @@ void App::RecordRenderCommands()
 		barrier2.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
 
-		acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain, barrier, barrier2, CurrentBackBufferView(), DepthStencilView());
+		acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain, barrier, barrier2, CurrentBackBufferView(), DepthStencilView(), mScreenViewport, mScissorRect);
 
 		
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
