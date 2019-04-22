@@ -30,12 +30,16 @@ void UI::GUIInit(HWND wnd, ID3D12Device* device, ID3D12DescriptorHeap *heap)
 						uiHeap->GetCPUDescriptorHandleForHeapStart(),
 						uiHeap->GetGPUDescriptorHandleForHeapStart());
 
-
 	//Pulled from example, will likely not be used
 	bool show_demo_window = true;
 	bool show_another_window = false;
 
-	numberOfParticles = 100;
+	parNum = 100;
+	amountOfComWork = 1;
+	activeSystem = CPU;
+	CPUActive = true;
+	GPUActive = false;
+	ACActive = false;
 }
 
 void UI::GUIUpdate()
@@ -58,7 +62,6 @@ void UI::GUIUpdate()
 	static bool no_nav = false;
 	static bool no_background = false;
 	static bool no_bring_to_front = false;
-
 
 	ImGuiWindowFlags window_flags = 0;
 	if (no_titlebar)        window_flags |= ImGuiWindowFlags_NoTitleBar;
@@ -95,6 +98,37 @@ void UI::GUIUpdate()
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
+
+		if (ImGui::Checkbox("CPU", &CPUActive))
+		{
+			GPUActive = false;
+			ACActive = false;
+			activeSystem = CPU;
+		}
+
+		if (ImGui::Checkbox("GPU", &GPUActive))
+		{
+			CPUActive = false;
+			ACActive = false;
+			activeSystem = GPU;
+		}
+
+
+		if (ImGui::Checkbox("AC", &ACActive))
+		{
+			GPUActive = false;
+			CPUActive = false;
+			activeSystem = AC;
+		}
+
+		
+
+		ImGui::SliderInt("Number Of Particles", &parNum, 1, 2000);
+		ImGui::SliderInt("Amount of compute work", &amountOfComWork, 1, 500);
+
+
+		if (!ACActive && !GPUActive && !CPUActive)
+			CPUActive = true;
 	}
 
 	ImGui::End();

@@ -7,14 +7,12 @@
 class GPUParticleManager
 {
 public:
-	GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &, ID3D12GraphicsCommandList* ,ComPtr<ID3DBlob> , ComPtr<ID3D12PipelineState > &);
+	GPUParticleManager(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList* ,ComPtr<ID3DBlob> , ComPtr<ID3D12PipelineState>&);
 	~GPUParticleManager();
 
 	void Render(ComPtr<ID3D12DescriptorHeap> &heap);
 	void Execute();
-	//ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
-
-
+	void Update(int, int);
 	ID3D12Resource *pUavResource;
 
 private:
@@ -22,12 +20,13 @@ private:
 
 	static const int numberOfParticles = 2760;
 	int currentNumberOfParticles = numberOfParticles;
+	int currentAmountOfComputeWork;
 
 	bool GenerateParticleMesh(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList*);
 	void CreateBuffers(ComPtr<ID3D12Device>&, ComPtr<ID3D12GraphicsCommandList>);
 	void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 	void CreateRootSignatures();
-	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
+
 	void BuildResources();
 	void BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12PipelineState > &mPSO);
 	XMFLOAT3 StartingVelocity();

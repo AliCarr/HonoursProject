@@ -63,8 +63,7 @@ App::~App()
 
 bool App::Initialize()
 {
-	//switcher = false;
-	currentSystem = AC;
+	currentSystem = static_cast<Systems>(mUI->GetSystem());
 
 	if (!D3DApp::Initialize())
 		return false;
@@ -79,7 +78,7 @@ bool App::Initialize()
 
 	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo2);
 	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(),  mcsByteCode, mPSO["renderPSO"]);
-	acSystem = new ACParticleSystem(md3dDevice, mCommandList.Get(), mCommandQueue);
+	acSystem = new ACParticleSystem(md3dDevice, mCommandList.Get(), mCommandQueue, mUI);
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
 
 	ThrowIfFailed(mCommandList->Close());
@@ -99,6 +98,7 @@ void App::OnResize()
 
 void App::Update(const GameTimer& gt)
 {
+	currentSystem = static_cast<Systems>(mUI->GetSystem());
 	OnKeyboardInput(gt);
 	mControl->mCamera->Update();
 	
@@ -110,14 +110,10 @@ void App::Update(const GameTimer& gt)
 
 	switch (currentSystem)
 	{
-		case CPU: pManager->Update(gt.DeltaTime(), mUI->numberOfParticles, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); 	mUI->GUIUpdate(); break;
-		case GPU:	mUI->GUIUpdate(); break;
-		case AC: acSystem->Update(objConstants); break;
+		case CPU:   pManager->Update(gt.DeltaTime(), mUI->GetNumberOfParticles(), XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); mUI->GUIUpdate(); break;
+		case GPU:   gpuPar->Update(mUI->GetNumberOfParticles(), mUI->GetComputeWorkAmount()); mUI->GUIUpdate(); break;
+		case AC:    acSystem->Update(objConstants, mUI->GetNumberOfParticles(), mUI->GetComputeWorkAmount()); mUI->GUIUpdate(); break;
 	}
-
-
-
-
 }
 
 void App::Draw(const GameTimer& gt)
@@ -190,7 +186,6 @@ void App::BuildConstantBuffers()
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(mCbvHeap->GetCPUDescriptorHandleForHeapStart(), 1U, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	md3dDevice->CreateShaderResourceView(mInputBufferA.Get(), &srvDesc, srvHandle);
-
 }
 
 void App::BuildRootSignature()
@@ -265,7 +260,6 @@ void App::BuildPSO()
 		mpsByteCode->GetBufferSize()
 	};
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	//psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -345,11 +339,9 @@ void App::RecordRenderCommands()
 		ThrowIfFailed(mCommandList->Close());
 
 		// Add the command list to the queue for execution.
-		//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		assert(mSwapChain);
-		//ThrowIfFailed(md3dDevice->GetDeviceRemovedReason());
 		ThrowIfFailed(mSwapChain->Present(0, 0));
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
@@ -371,8 +363,6 @@ void App::RecordRenderCommands()
 		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-	
 
 		mCommandList->ResourceBarrier(1, &barrier);
 		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
@@ -424,9 +414,8 @@ void App::RecordRenderCommands()
 		barrier2.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
 
-		acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain, barrier, barrier2, CurrentBackBufferView(), DepthStencilView(), mScreenViewport, mScissorRect);
+		acSystem->Execute(mCommandQueue, mInputBufferA, mSwapChain, barrier, barrier2, CurrentBackBufferView(), DepthStencilView(), mScreenViewport, mScissorRect, mUI);
 
-		
 		mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
 		break;

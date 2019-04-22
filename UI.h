@@ -12,12 +12,19 @@ public:
 	void GUIInit(HWND, ID3D12Device*, ID3D12DescriptorHeap*);
 	void GUIUpdate();
 	void GUIRender(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>);
-	int numberOfParticles;
 
 private:
 	ComPtr<ID3D12DescriptorHeap> uiHeap = nullptr;
 
 	bool colours[2];
+	bool CPUActive, GPUActive, ACActive;
+	enum Systems { CPU, GPU, AC };
+	Systems activeSystem;
+	int parNum, amountOfComWork;
 	
+public:
+	Systems GetSystem() { return activeSystem; };
+	int GetNumberOfParticles() { return parNum; };
+	int GetComputeWorkAmount() { return amountOfComWork; };
 };
 

@@ -2,25 +2,19 @@
 
 #include "stdafx.h"
 #include <time.h>
+#include "UI.h"
 
 class ACParticleSystem
 {
 	public:
-		ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, ComPtr<ID3D12CommandQueue> &graphicsQueue);
+		ACParticleSystem(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList*, ComPtr<ID3D12CommandQueue>&, UI*);
 		~ACParticleSystem();
-		void Update(ObjectConstants);
-		void Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
-			ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER&, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView,  D3D12_VIEWPORT &viewPort, D3D12_RECT &rect);
-
-		ComPtr<ID3D12RootSignature> GetComputeRootSignature() { return mComputeRootSignature; };
-
-
-
-
+		void Update(ObjectConstants, int, int);
+		void Execute(ComPtr<ID3D12CommandQueue>, ComPtr<ID3D12Resource>&, ComPtr<IDXGISwapChain>&, D3D12_RESOURCE_BARRIER&, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE&, D3D12_CPU_DESCRIPTOR_HANDLE&,  D3D12_VIEWPORT&, D3D12_RECT&, UI*);
 
 	private:
 		static const int FrameCount = 4;
-		void BuildDescriptors(UINT descriptorSize, ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
+		void BuildDescriptors(UINT , ComPtr<ID3D12DescriptorHeap>&, ID3D12GraphicsCommandList*);
 		time_t mTime;
 		UINT indexOffset;
 		UINT vertexOffset;
@@ -29,12 +23,13 @@ class ACParticleSystem
 
 		ID3D12Resource *pUavResource;
 		static const int numberOfParticles = 2000;
+		int amountOfComputeWork;
 
 		int currentNumberOfParticles = numberOfParticles;
 
 		ComPtr<ID3D12RootSignature> mComputeRootSignature = nullptr;
 
-		bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList *commandList);
+		bool GenerateParticleMesh(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList*);
 		void BuildResources();
 		void BuildACObjects();
 
@@ -59,7 +54,6 @@ class ACParticleSystem
 
 
 		ComPtr<ID3D12Resource> inputParticleBuffer;
-		ComPtr<ID3D12Resource> inputParticleBuffer2;
 		ComPtr<ID3D12Resource> outputParticleBuffer;
 		ComPtr<ID3D12Resource> uploadParticleBuffer;
 		ComPtr<ID3D12Resource> uploadParticleBuffer2;
@@ -67,7 +61,6 @@ class ACParticleSystem
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 
 		Microsoft::WRL::ComPtr<ID3D12Device> md3ddevice;
-		ID3D12GraphicsCommandList* list;
 
 		std::unique_ptr<UploadBuffer<Vertex>> uploader = nullptr;
 		bool whichHandle = false;
@@ -106,18 +99,13 @@ class ACParticleSystem
 		ComPtr<ID3D12CommandAllocator> m_graphicsCopyAllocators[FrameCount];
 		ComPtr<ID3D12GraphicsCommandList> m_graphicsCopyCommandLists[FrameCount];
 
-		// Timing queries
-	/*	ComPtr<ID3D12QueryHeap> m_timeQueryHeap;
-		ComPtr<ID3D12Resource> m_timeQueryReadbackBuffer[FrameCount];
-		UINT64 m_queryResults[FrameCount];
-		int m_queryReadbackIndex;
-		UINT64 m_frequency;*/
+		UI *mUI;
 
 		UINT64 frameIndex, lastFrameIndex;
 
 		void RecordComputeTasks();
 		void RecordCopyTasks(ComPtr<ID3D12Resource>&);
-		void RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView, D3D12_VIEWPORT &viewPort, D3D12_RECT &rect);
+		void RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER&, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView, D3D12_VIEWPORT &viewPort, D3D12_RECT &rect, UI*);
 		void BuildHeaps();
 		void BuildPSOs();
 		void BuildRootSignatures();

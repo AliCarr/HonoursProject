@@ -4,19 +4,17 @@
 ParticleManager::ParticleManager(ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh)
 {
 	GenerateParticleMesh(device, commandList);
-	temp = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
 	srand((unsigned)time(&mTime));
 
 	for (int c = 0; c < numberOfParticles; c++)
 	{
 		auto par = new ParticleInfromation();
-
-		par->geo = new MeshGeometry(*mGeo);
-		par->position = StartingPosition();
-		par->dynamicVB = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
-		par->velocity = StartingVelocity();
-		par->accelertaion = 0;
-		par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
+			par->geo = new MeshGeometry(*mGeo);
+			par->position = StartingPosition();
+			par->dynamicVB = std::make_unique<UploadBuffer<Vertex>>(device.Get(), indexCount, false);
+			par->velocity = StartingVelocity();
+			par->accelertaion = 0;
+			par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
 		mParticles.push_back(std::move(par));
  	}
 
@@ -47,16 +45,15 @@ ParticleManager::~ParticleManager()
 
 void ParticleManager::Update(float time, int num, DirectX::XMMATRIX mat)
 {
-	for (int c = 0; c < numberOfParticles; c++)
+	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
 		auto currVB = mParticles.at(c)->dynamicVB.get();
-
 			mParticles.at(c)->energy -= time;
 			UpdatePosition(c, time, currVB);
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
 	}
-	currentNumberOfParticles = num;
 
+	currentNumberOfParticles = num;
 
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, mat);
@@ -71,7 +68,7 @@ void ParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 	list->SetDescriptorHeaps(1, descriptorHeaps);
 	list->SetPipelineState(pso.Get());
-	list->SetGraphicsRootSignature(mRootSignature.Get());
+	list->SetGraphicsRootSignature(rootSig.Get());
 
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
@@ -188,11 +185,12 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(time / speed));
 
 		Vertex v;
-		v.Pos = mParticles.at(current)->position;
-		v.Color = XMFLOAT4(DirectX::Colors::White); 
-		v.texCoord = { 0.0f, 0.0f };
-		v.id = current;
+			v.Pos = mParticles.at(current)->position;
+			v.Color = XMFLOAT4(DirectX::Colors::White); 
+			v.texCoord = { 0.0f, 0.0f };
+			v.id = current;
 		buffer->CopyData(i, v);
+
 		mParticles.at(current)->velocity.x += 0.001f;
 		mParticles.at(current)->velocity.z += 0.001f;
 		
@@ -217,22 +215,22 @@ void ParticleManager::BuildHeap()
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
-		ThrowIfFailed(md3ddevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mCbvHeap)));
+	ThrowIfFailed(md3ddevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mCbvHeap)));
 
-		UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 
-		mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3ddevice.Get(), 1, true);
-		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
+	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3ddevice.Get(), 1, true);
+	D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
 
-		int boxCBufIndex = 0;
-		cbAddress += boxCBufIndex * objCBByteSize;
+	int boxCBufIndex = 0;
+	cbAddress += boxCBufIndex * objCBByteSize;
 
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-		cbvDesc.BufferLocation = cbAddress;
-		cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-		md3ddevice->CreateConstantBufferView(
-			&cbvDesc,
-			mCbvHeap->GetCPUDescriptorHandleForHeapStart());
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+	cbvDesc.BufferLocation = cbAddress;
+	cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+	md3ddevice->CreateConstantBufferView(
+		&cbvDesc,
+		mCbvHeap->GetCPUDescriptorHandleForHeapStart());
 	mCbvHeap->SetName(L"Constant Buffer Heap");
 }
 
@@ -258,7 +256,7 @@ void ParticleManager::BuildPSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 	psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
-	psoDesc.pRootSignature = mRootSignature.Get();
+	psoDesc.pRootSignature = rootSig.Get();
 	psoDesc.VS =
 	{
 		reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
@@ -318,5 +316,5 @@ void ParticleManager::BuildRootSignature()
 		0,
 		serializedRootSig->GetBufferPointer(),
 		serializedRootSig->GetBufferSize(),
-		IID_PPV_ARGS(&mRootSignature)));
+		IID_PPV_ARGS(&rootSig)));
 }

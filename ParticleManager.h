@@ -7,14 +7,10 @@
 class ParticleManager
 {
 public:
-	ParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &device, 
-					ID3D12GraphicsCommandList* commandList, 
-					std::unique_ptr<MeshGeometry>&);
-
+	ParticleManager(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList*, std::unique_ptr<MeshGeometry>&);
 	~ParticleManager();
 
-	void Update(float,  int, DirectX::XMMATRIX);
-
+	void Update(float, int, DirectX::XMMATRIX);
 	void Render(ComPtr<ID3D12DescriptorHeap>&);
 
 private: 
@@ -31,16 +27,12 @@ private:
 	const float maxAcceleration = 10.0f;
 
 	//Functions
-	bool GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> &device, 
-							  ID3D12GraphicsCommandList *commandList);
-
-	void UpdatePosition(int, 
-						float, 
-						UploadBuffer<Vertex>*);
-
+	bool GenerateParticleMesh(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList*);
+	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
 	void ParticleReset(int);
 	void BuildHeap();
-
+	void BuildPSO();
+	void BuildRootSignature();
 	XMFLOAT3 StartingVelocity();
 	XMFLOAT3 StartingPosition();
 
@@ -56,16 +48,11 @@ private:
 	SubmeshGeometry boxSubmesh;
 	Vertex vert[numberOfParticles];
 	time_t mTime;
-
-	std::unique_ptr<UploadBuffer<Vertex>> temp = nullptr;
-
-	ComPtr<ID3D12Device> md3ddevice;
 	ID3D12GraphicsCommandList* list;
-	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 
-	void BuildPSO();
-	void BuildRootSignature();
-	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
+	ComPtr<ID3D12Device> md3ddevice;
+	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
+	ComPtr<ID3D12RootSignature> rootSig = nullptr;
 	ComPtr<ID3D12PipelineState> pso;
 };

@@ -5,7 +5,7 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 	md3ddevice = device;
 	CreateRootSignatures();
 	GenerateParticleMesh(device, commandList);
-
+	currentAmountOfComputeWork = 1;
 	//Random offsets need to be as random as possible to prevent grid effect
 	srand((unsigned)time(&mTime));
 	for (int c = 0; c < currentNumberOfParticles; c++)
@@ -42,7 +42,7 @@ GPUParticleManager::GPUParticleManager(Microsoft::WRL::ComPtr<ID3D12Device> &dev
 			data->acceleration = XMFLOAT3(0, 0, 0);
 			data->position = par->position;
 			data->velocity = par->velocity;
-			data->energy = par->energy = ((float)(rand() % 100)) / 100.0f;;
+			data->energy = par->energy = ((float)(rand() % 100)) / 100.0f;
 		particleInputeData.push_back(std::move(*data));
 	}
 
@@ -152,9 +152,15 @@ void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 	}
 }
 
+void GPUParticleManager::Update(int num, int work)
+{
+	currentNumberOfParticles = num;
+	currentAmountOfComputeWork = work;
+}
+
 void GPUParticleManager::Execute()
 {
-	for (int c = 0; c < 200; c++)
+	for (int c = 0; c < currentAmountOfComputeWork; c++)
 	{
 		if (whichHandle == true)
 		{
