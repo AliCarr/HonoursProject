@@ -18,7 +18,7 @@ public:
 private:
 	time_t mTime;
 
-	static const int numberOfParticles = 2760;
+	static const int numberOfParticles = 6000;
 	int currentNumberOfParticles = numberOfParticles;
 	int currentAmountOfComputeWork;
 

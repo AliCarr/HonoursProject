@@ -22,7 +22,7 @@ class ACParticleSystem
 		UINT SRV = 0U;
 
 		ID3D12Resource *pUavResource;
-		static const int numberOfParticles = 2000;
+		static const int numberOfParticles = 6000;
 		int amountOfComputeWork;
 
 		int currentNumberOfParticles = numberOfParticles;

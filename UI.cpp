@@ -99,33 +99,52 @@ void UI::GUIUpdate()
 		}
 		ImGui::EndMenuBar();
 
-		if (ImGui::Checkbox("CPU", &CPUActive))
+		if (ImGui::CollapsingHeader("TestControls"))
 		{
-			GPUActive = false;
-			ACActive = false;
-			activeSystem = CPU;
+			ImGui::SliderInt("Amount of compute work", &amountOfComWork, 1, maxWork);
+		}
+		if (ImGui::CollapsingHeader("Systems"))
+		{
+			if (ImGui::Checkbox("CPU System", &CPUActive))
+			{
+				GPUActive = false;
+				ACActive = false;
+				activeSystem = CPU;
+			}
+
+			if (ImGui::Checkbox("GPU System", &GPUActive))
+			{
+				CPUActive = false;
+				ACActive = false;
+				activeSystem = GPU;
+			}
+
+			if (ImGui::Checkbox("AC System", &ACActive))
+			{
+				GPUActive = false;
+				CPUActive = false;
+				activeSystem = AC;
+			}
+		}
+		if (ImGui::CollapsingHeader("Attributes"))
+		{
+			ImGui::SliderInt("Number Of Particles", &parNum, 1, maxParicles);
 		}
 
-		if (ImGui::Checkbox("GPU", &GPUActive))
+		if (ImGui::CollapsingHeader("Information"))
 		{
-			CPUActive = false;
-			ACActive = false;
-			activeSystem = GPU;
+			ImGui::Text("Hello and welcome to Alastair Carr's fourth");
+			ImGui::Text("year honours project; An Investigation into");
+			ImGui::Text("the Benefits of Asynchronous Compute. This");
+			ImGui::Text("application offers three methods of handling ");
+			ImGui::Text("the computational workload of a particle ");
+			ImGui::Text("system, a CPU side system, a GPU side ");
+			ImGui::Text("system, and finally a system that runs using ");
+			ImGui::Text("Asynchronous Compute. The UI provides all ");
+			ImGui::Text("controls needed for testing, changing the ");
+			ImGui::Text("visuals, and some other small tweaks. Enjoy! ");
+			ImGui::Text("A.C.");
 		}
-
-
-		if (ImGui::Checkbox("AC", &ACActive))
-		{
-			GPUActive = false;
-			CPUActive = false;
-			activeSystem = AC;
-		}
-
-		
-
-		ImGui::SliderInt("Number Of Particles", &parNum, 1, 2000);
-		ImGui::SliderInt("Amount of compute work", &amountOfComWork, 1, 500);
-
 
 		if (!ACActive && !GPUActive && !CPUActive)
 			CPUActive = true;

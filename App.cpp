@@ -157,7 +157,7 @@ void App::BuildConstantBuffers()
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Buffer.NumElements = 2760;
+	srvDesc.Buffer.NumElements = 6000;
 	srvDesc.Buffer.StructureByteStride = sizeof(ComputeData);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
@@ -166,7 +166,7 @@ void App::BuildConstantBuffers()
 	bufferDesc.Alignment = 0;
 	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	bufferDesc.Width = 2760 * sizeof(ComputeData); //Change this to numberOfParticles
+	bufferDesc.Width = 6000 * sizeof(ComputeData); //Change this to numberOfParticles
 	bufferDesc.Height = 1;
 	bufferDesc.DepthOrArraySize = 1;
 	bufferDesc.MipLevels = 1;
@@ -295,7 +295,6 @@ void App::OnKeyboardInput(const GameTimer& gt)
 
 void App::RecordRenderCommands()
 {
-
 	D3D12_RESOURCE_BARRIER barrier = {};
 	D3D12_RESOURCE_BARRIER barrier2 = {};
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -316,8 +315,6 @@ void App::RecordRenderCommands()
 		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-		//ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 
 		mCommandList->ResourceBarrier(1, &barrier);
 		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);

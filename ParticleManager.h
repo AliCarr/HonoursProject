@@ -14,11 +14,12 @@ public:
 	void Render(ComPtr<ID3D12DescriptorHeap>&);
 
 private: 
-	static const int numberOfParticles = 2046;
+	static const int numberOfParticles = 6000;
 	int currentNumberOfParticles = 2046;
 
-	const float width = 0.004f;
+	const float width = 0.08f;
 	const float depth = 0.004f;
+	
 	const UINT32 rows = 2;
 	const UINT32 columns = 2;
 

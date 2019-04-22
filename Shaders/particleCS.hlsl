@@ -43,6 +43,7 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 		gOutput[dispatchThreadID.x].velocity += gInput[dispatchThreadID.x].velocity / 1000;
 	}
 
+
 	if (gOutput[dispatchThreadID.x].acceleration.y <= 0.1)
 	{
 		gOutput[dispatchThreadID.x].acceleration += deltaTime / 10;

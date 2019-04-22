@@ -134,7 +134,6 @@ bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> 
 	{
 		vertices[i].Pos = particleMeshData.Vertices[i].Position;
 		vertices[i].Color = XMFLOAT4(DirectX::Colors::Crimson);
-
 		vert[i].Pos = vertices[i].Pos;
 	}
 
@@ -181,7 +180,7 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 	{
 		//Offset the cooridnates for each vertex
 		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(time / speed));
-		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(time / speed)) - mParticles.at(current)->accelertaion;
+		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(time / speed));
 		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(time / speed));
 
 		Vertex v;
@@ -268,7 +267,6 @@ void ParticleManager::BuildPSO()
 		mpsByteCode->GetBufferSize()
 	};
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	//psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
