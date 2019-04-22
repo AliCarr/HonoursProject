@@ -19,7 +19,6 @@ struct Vertex
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT2 texCoord;
 	DirectX::XMFLOAT4 Color;
-
 	UINT id; //Needed for accessing SRV in VS
 };
 
@@ -46,7 +45,6 @@ struct ParticleInfromation
 	float accelertaion;
 	XMFLOAT3 position;
 	XMFLOAT3 velocity;
-
 	MeshGeometry* geo = nullptr;
 	std::unique_ptr<UploadBuffer<Vertex>> dynamicVB = nullptr;
 };
