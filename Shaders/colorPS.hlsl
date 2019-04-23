@@ -5,13 +5,11 @@ cbuffer cbPerObject : register(b0)
 	float gTime;
 };
 
-
 struct VertexOut
 {
 	float4 PosH  : SV_POSITION;
 	float4 colour  : COLOUR;
 };
-
 
 float4 PS(VertexOut pin) : SV_Target
 {

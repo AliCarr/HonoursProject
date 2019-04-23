@@ -24,7 +24,7 @@ private:
 	const float depth = 0.008f;
 	const UINT32 rows = 2;
 	const UINT32 columns = 2;
-	const float speed = 100.0f;
+	const float speed = 60.0f;
 	const float maxAcceleration = 10.0f;
 
 	//System Information

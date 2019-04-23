@@ -4,8 +4,11 @@
 ParticleManager::ParticleManager(ComPtr<ID3D12Device> &device, ID3D12GraphicsCommandList* commandList, std::unique_ptr<MeshGeometry>& mesh)
 {
 	GenerateParticleMesh(device, commandList);
+
+	//Enable better random
 	srand((unsigned)time(&mTime));
 
+	//Build the maximum numebr of particles 
 	for (int c = 0; c < numberOfParticles; c++)
 	{
 		auto par = new ParticleInfromation();
@@ -15,6 +18,7 @@ ParticleManager::ParticleManager(ComPtr<ID3D12Device> &device, ID3D12GraphicsCom
 			par->velocity = StartingVelocity();
 			par->accelertaion = 0;
 			par->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
+			par->geo->VertexBufferGPU = par->dynamicVB->Resource(); //Prevents null values when updating larger systems
 		mParticles.push_back(std::move(par));
  	}
 
@@ -45,6 +49,8 @@ ParticleManager::~ParticleManager()
 
 void ParticleManager::Update(float time, int num, DirectX::XMMATRIX mat)
 {
+	currentNumberOfParticles = num;
+
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
 		auto currVB = mParticles.at(c)->dynamicVB.get();
@@ -53,8 +59,7 @@ void ParticleManager::Update(float time, int num, DirectX::XMMATRIX mat)
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
 	}
 
-	currentNumberOfParticles = num;
-
+	//The y position and pulse colour need to go
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, mat);
 		objConstants.yPosiiton += time;
@@ -173,15 +178,16 @@ bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> 
 
 void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Vertex>* buffer)
 {
+	float fixedDeltaTime = 0.0178f;
 	if(mParticles.at(current)->accelertaion <= maxAcceleration)
-		mParticles.at(current)->accelertaion += time / 30.0f;
+		mParticles.at(current)->accelertaion += fixedDeltaTime / 30.0f;
 
 	for (UINT i = 0; i < vertexOffset; i++)
 	{
 		//Offset the cooridnates for each vertex
-		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(time / speed));
-		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(time / speed));
-		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(time / speed));
+		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(fixedDeltaTime));
+		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(fixedDeltaTime));
+		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(fixedDeltaTime));
 
 		Vertex v;
 			v.Pos = mParticles.at(current)->position;
@@ -190,17 +196,11 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 			v.id = current;
 		buffer->CopyData(i, v);
 
-		mParticles.at(current)->velocity.x += 0.001f;
-		mParticles.at(current)->velocity.z += 0.001f;
-		
-	}
-
-	if (mParticles.at(current)->position.y <= -3.0f)
-	{
-		mParticles.at(current)->accelertaion = -mParticles.at(current)->accelertaion / 2.2f;
-		mParticles.at(current)->velocity.x /= 1.2f;
-		mParticles.at(current)->velocity.z /= 1.2f;
-		mParticles.at(current)->position.y = -2.8f;
+		if (mParticles.at(current)->velocity.x <= 0.0018)
+		{
+			mParticles.at(current)->velocity.x += mParticles.at(current)->velocity.x/10000;
+			mParticles.at(current)->velocity.z += mParticles.at(current)->velocity.z/10000;
+		}
 	}
 
 	if (mParticles.at(current)->energy <= 0.0f)

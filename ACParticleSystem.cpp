@@ -85,8 +85,8 @@ ACParticleSystem::ACParticleSystem(Microsoft::WRL::ComPtr<ID3D12Device> &device,
 
 ACParticleSystem::~ACParticleSystem()
 {
-	for (int i = 0; i < FrameCount; ++i) {
-	
+	for (int i = 0; i < FrameCount; ++i) 
+	{
 			WaitForFence(m_computeFences[i].Get(),
 				m_computeFenceValues[i], m_computeFenceEvents[i]);
 			WaitForFence(m_graphicsFences[i].Get(),
@@ -99,7 +99,8 @@ ACParticleSystem::~ACParticleSystem()
 	}
 
 	// Close handles to fence events.
-	for (int i = 0; i < FrameCount; ++i) {
+	for (int i = 0; i < FrameCount; ++i) 
+	{
 		CloseHandle(m_computeFenceEvents[i]);
 		CloseHandle(m_graphicsFenceEvents[i]);
 		CloseHandle(m_graphicsCopyFenceEvents[i]);
@@ -137,44 +138,28 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 		/////COMPUTE PHASE//////////////////
 		m_computeCommandQueue->Wait(m_graphicsCopyFences[lastFrameIndex].Get(), m_graphicsCopyFenceValues[lastFrameIndex]);
 		RecordComputeTasks();
-
 		ID3D12CommandList* ppCommandList[] = { m_computeCommandLists[frameIndex].Get() };
-
 		m_computeCommandQueue->ExecuteCommandLists(1, ppCommandList);
 		m_computeFenceValues[frameIndex] = m_computeFenceValue;
 		m_computeCommandQueue->Signal(m_computeFences[frameIndex].Get(), m_computeFenceValue);
-
 		++m_computeFenceValue;
-
 
 		/////COPY PHASE/////////////
 		RecordCopyTasks(drawBuffer);
-
 		ppCommandList[0] = { m_graphicsCopyCommandLists[frameIndex].Get() };
-
 		mGraphicsQueue->Wait(m_computeFences[frameIndex].Get(), m_computeFenceValues[frameIndex]);
-
 		mGraphicsQueue->ExecuteCommandLists(1, ppCommandList);
-
 		m_graphicsCopyFenceValues[frameIndex] = m_graphicsCopyFenceValue;
 		mGraphicsQueue->Signal(m_graphicsCopyFences[frameIndex].Get(), m_graphicsCopyFenceValue);
-
 		++m_graphicsCopyFenceValue;
 
-
 		////////RENDER PHASE////////////////
-
-
 		RecordRenderTasks(mSwapChain, bar, bar2, backView, depthView, viewPort, rect, ui);
-
 		ppCommandList[0] = { m_graphicsCommandLists[frameIndex].Get() };
 		mGraphicsQueue->ExecuteCommandLists(1, ppCommandList);
-
 		m_graphicsFenceValues[frameIndex] = m_graphicsFenceValue;
 		mGraphicsQueue->Signal(m_graphicsFences[frameIndex].Get(), m_graphicsFenceValue);
-
 		++m_graphicsFenceValue;
-
 
 		// Assign the current fence value to the current frame.
 		m_frameFenceValues[frameIndex] = m_frameFenceValue;
@@ -182,8 +167,6 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 		// Signal and increment the fence value.
 		ThrowIfFailed(mGraphicsQueue->Signal(m_frameFences[frameIndex].Get(), m_frameFenceValue));
 		++m_frameFenceValue;
-
-	
 
 		// Update the frame index.
 		lastFrameIndex = frameIndex;
@@ -198,7 +181,6 @@ void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
 		assert(mSwapChain);
 
 		ThrowIfFailed(mSwapChain->Present(0, 0));
-
 }
 
 void ACParticleSystem::BuildResources()

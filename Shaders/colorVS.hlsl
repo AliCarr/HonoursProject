@@ -29,7 +29,6 @@ struct particleData
 	float energy;
 };
 
-
 StructuredBuffer<particleData> gInput : register (t1);
 
 VertexOut VS(VertexIn vin)

@@ -1,17 +1,2 @@
-﻿  ACParticleSystem.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(47): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(48): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(49): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-  App.cpp
-  Controls.cpp
-  GPUParticleManager.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(24): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(25): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\gpuparticlemanager.cpp(26): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-  ModelLoader.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\modelloader.cpp(42): warning C4267: 'argument': conversion from 'size_t' to 'GeometryGenerator::uint32', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\modelloader.cpp(102): warning C4267: 'argument': conversion from 'size_t' to 'GeometryGenerator::uint32', possible loss of data
-  ParticleManager.cpp
-  UI.cpp
-  Generating Code...
+﻿  ParticleManager.cpp
   Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Debug\Honours Project.exe

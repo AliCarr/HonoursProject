@@ -26,7 +26,7 @@ private:
 	Systems activeSystem;
 	int parNum, amountOfComWork;
 	const int maxParicles = 5000;
-	const int maxWork = 700;
+	const int maxWork = 1600;
 	
 public:
 	//Getters

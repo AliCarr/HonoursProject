@@ -8,7 +8,6 @@ struct ComputeData
 };
 
 StructuredBuffer<ComputeData> gInput	:	register(t0);
-StructuredBuffer<ComputeData> gInput2	:	register(t1);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
 
 
