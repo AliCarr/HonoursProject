@@ -1,1 +1,4 @@
-﻿
+﻿  ParticleManager.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(134): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\particlemanager.cpp(211): warning C4305: '-=': truncation from 'double' to 'float'
+  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\Debug\Honours Project.exe

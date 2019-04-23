@@ -108,7 +108,7 @@ XMFLOAT3 ParticleManager::StartingPosition()
 
 void ParticleManager::ParticleReset(int current)
 {
-	mParticles.at(current)->energy = ((float)(rand() % 300) + 100.0f) / 100.0f;
+	mParticles.at(current)->energy = 1;
 	mParticles.at(current)->position = StartingPosition();
 	mParticles.at(current)->accelertaion = 0;
 	mParticles.at(current)->velocity = StartingVelocity();
@@ -184,6 +184,8 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 
 	for (UINT i = 0; i < vertexOffset; i++)
 	{
+		mParticles.at(current)->position.y -= mParticles.at(current)->accelertaion / 30;
+
 		//Offset the cooridnates for each vertex
 		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(fixedDeltaTime));
 		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(fixedDeltaTime));
@@ -199,9 +201,14 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 		if (mParticles.at(current)->velocity.x <= 0.0018)
 		{
 			mParticles.at(current)->velocity.x += mParticles.at(current)->velocity.x/10000;
+			mParticles.at(current)->velocity.y += mParticles.at(current)->velocity.y/10000;
 			mParticles.at(current)->velocity.z += mParticles.at(current)->velocity.z/10000;
 		}
 	}
+	if (mParticles.at(current)->accelertaion <= 0.1)
+		mParticles.at(current)->accelertaion += fixedDeltaTime / 10;
+
+	mParticles.at(current)->energy -= 0.01;
 
 	if (mParticles.at(current)->energy <= 0.0f)
 		ParticleReset(current);
