@@ -25,8 +25,8 @@ private:
 	enum Systems { CPU, GPU, AC };
 	Systems activeSystem;
 	int parNum, amountOfComWork;
-	const int maxParicles = 5000;
-	const int maxWork = 1600;
+	const int maxParicles = 6000;
+	const int maxWork = 4000;
 	
 public:
 	//Getters

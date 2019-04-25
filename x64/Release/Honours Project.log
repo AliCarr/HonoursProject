@@ -1,0 +1,12 @@
+﻿  ACParticleSystem.cpp
+\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(47): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(48): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(49): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+  App.cpp
+  UI.cpp
+  Generating code
+  2 of 2985 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    3 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Release\Honours Project.exe

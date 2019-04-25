@@ -665,8 +665,6 @@ void ACParticleSystem::BuildRootSignatures()
 		serializedRootSig->GetBufferSize(),
 		IID_PPV_ARGS(&renderSig)));
 
-
-
 	// Root parameter can be a table, root descriptor or root constants.
 	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[4];
 

@@ -79,6 +79,7 @@ bool App::Initialize()
 	pManager = new ParticleManager(md3dDevice, mCommandList.Get(), mBoxGeo2);
 	gpuPar = new GPUParticleManager(md3dDevice, mCommandList.Get(),  mcsByteCode, mPSO["renderPSO"]);
 	acSystem = new ACParticleSystem(md3dDevice, mCommandList.Get(), mCommandQueue, mUI);
+
 	mUI->GUIInit(MainWnd(), md3dDevice.Get(), mCbvHeap.Get());
 
 	ThrowIfFailed(mCommandList->Close());
