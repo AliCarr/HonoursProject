@@ -14,13 +14,15 @@ public:
 	void GUIInit(HWND, ID3D12Device*, ID3D12DescriptorHeap*);
 	void GUIUpdate();
 	void GUIRender(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>);
+	XMVECTORF32 GetColour();
 
 private:
 	//Dx12 Objects
 	ComPtr<ID3D12DescriptorHeap> uiHeap = nullptr;
 
 	//System Control Variables 
-	bool colours[2];
+	bool colours[16];
+	int colour;
 	bool CPUActive, GPUActive, ACActive;
 	enum Systems { CPU, GPU, AC };
 	Systems activeSystem;

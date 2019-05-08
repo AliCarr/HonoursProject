@@ -200,6 +200,7 @@ void App::BuildRootSignature()
 
 		slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 		slotRootParameter[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
+		
 
 	// A root signature is an array of root parameters.
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter, 0, nullptr,
@@ -315,7 +316,7 @@ void App::RecordRenderCommands()
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
 
 		mCommandList->ResourceBarrier(1, &barrier);
-		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+		mCommandList->ClearRenderTargetView(CurrentBackBufferView(),  mUI->GetColour(), 0, nullptr);
 		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
@@ -336,6 +337,7 @@ void App::RecordRenderCommands()
 
 		break;
 
+
 	case GPU:
 		ThrowIfFailed(mDirectCmdListAlloc->Reset());
 		ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO["renderPSO"].Get()));
@@ -344,7 +346,7 @@ void App::RecordRenderCommands()
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
 
 		mCommandList->ResourceBarrier(1, &barrier);
-		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
+		mCommandList->ClearRenderTargetView(CurrentBackBufferView(), mUI->GetColour(), 0, nullptr);
 		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 

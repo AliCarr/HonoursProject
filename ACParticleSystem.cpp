@@ -133,7 +133,15 @@ void ACParticleSystem::Update(ObjectConstants constants, int num, int work)
 }
 
 void ACParticleSystem::Execute(ComPtr<ID3D12CommandQueue> graphicsQueue,
-							   ComPtr<ID3D12Resource>& drawBuffer, ComPtr<IDXGISwapChain> &mSwapChain, D3D12_RESOURCE_BARRIER &bar, D3D12_RESOURCE_BARRIER& bar2, D3D12_CPU_DESCRIPTOR_HANDLE &backView, D3D12_CPU_DESCRIPTOR_HANDLE &depthView, D3D12_VIEWPORT &viewPort, D3D12_RECT &rect, UI* ui)
+							   ComPtr<ID3D12Resource>& drawBuffer, 
+							   ComPtr<IDXGISwapChain> &mSwapChain, 
+							   D3D12_RESOURCE_BARRIER &bar,
+							   D3D12_RESOURCE_BARRIER& bar2, 
+							   D3D12_CPU_DESCRIPTOR_HANDLE &backView, 
+							   D3D12_CPU_DESCRIPTOR_HANDLE &depthView, 
+							   D3D12_VIEWPORT &viewPort, 
+							   D3D12_RECT &rect, 
+							   UI* ui)
 {
 		/////COMPUTE PHASE//////////////////
 		m_computeCommandQueue->Wait(m_graphicsCopyFences[lastFrameIndex].Get(), m_graphicsCopyFenceValues[lastFrameIndex]);
@@ -452,9 +460,11 @@ void ACParticleSystem::RecordComputeTasks()
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(computeHeap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(computeHeap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
 
+		UINT test = 1;
 		//set compute root descriptor table
 		pCommandList->SetComputeRootDescriptorTable(0U, srvHandle);
 		pCommandList->SetComputeRootDescriptorTable(2U, uavHandle);
+		pCommandList->SetComputeRoot32BitConstants(3U, sizeof(float), &test, 0);
 
 		pCommandList->Dispatch(static_cast<int>(ceil(currentNumberOfParticles / 32)), 1, 1);
 
@@ -514,7 +524,7 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 	commandList->RSSetScissorRects(1, &rect);
 
 	commandList->ResourceBarrier(1, &bar);
-	commandList->ClearRenderTargetView(backView, Colors::Black, 0, nullptr);
+	commandList->ClearRenderTargetView(backView, ui->GetColour(), 0, nullptr);
 	commandList->ClearDepthStencilView(depthView, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	commandList->OMSetRenderTargets(1, &backView, true, &depthView);
 
@@ -550,8 +560,6 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 		D3D12_RESOURCE_STATE_COPY_DEST);
 
 	ui->GUIRender(commandList);
-
-	//commandList->ResourceBarrier(1, &bar);
 
 	commandList->ResourceBarrier(1, barriers);
 	ThrowIfFailed(commandList->Close());
@@ -666,7 +674,7 @@ void ACParticleSystem::BuildRootSignatures()
 		IID_PPV_ARGS(&renderSig)));
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[4];
+	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[5];
 
 	CD3DX12_DESCRIPTOR_RANGE ranges[4];
 		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -678,9 +686,10 @@ void ACParticleSystem::BuildRootSignatures()
 	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[4].InitAsConstants(1, 0); //register 1b
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(4, computeSlotRootParameter,
+	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(5, computeSlotRootParameter,
 		0, nullptr);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer

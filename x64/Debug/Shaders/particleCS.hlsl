@@ -9,6 +9,11 @@ struct ComputeData
 
 StructuredBuffer<ComputeData> gInput	:	register(t0);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
+//uint	gOutput	:	register(b1);
+cbuffer Manipulaters : register(b0)
+{
+	float test;
+}
 
 
 [numthreads(32, 1, 1)]
@@ -19,7 +24,7 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 
 	//Needs replaced with proper delta time
 	float3 deltaTime = { 0.0178, 0.0178, 0.0178 };
-
+	test;
 	//Add gravitational pull, then general velocity
 	gOutput[dispatchThreadID.x].position.y -= gOutput[dispatchThreadID.x].acceleration.y / 30;
 	gOutput[dispatchThreadID.x].position += gInput[dispatchThreadID.x].velocity*deltaTime;

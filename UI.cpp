@@ -87,8 +87,20 @@ void UI::GUIUpdate()
 	{
 		if (ImGui::BeginMenu("Colours"))
 		{
-			ImGui::MenuItem("Red", NULL, &colours[0]);
-			ImGui::MenuItem("Blue", NULL, &colours[1]);
+			if (ImGui::MenuItem("Red", NULL, &colours[0]))
+			{
+				colour = 0;
+			}
+
+			if (ImGui::MenuItem("Blue", NULL, &colours[1]))
+			{
+				colour = 1;
+			}
+
+			if (ImGui::MenuItem("Green", NULL, &colours[2]))
+			{
+				colour = 2;
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Help"))
@@ -159,4 +171,26 @@ void UI::GUIRender(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list)
 	list->SetDescriptorHeaps(1, descriptorHeaps);
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), list.Get());
+}
+
+XMVECTORF32 UI::GetColour()
+{
+	switch(colour)
+	{
+	case 0:
+		return Colors::Red;
+		break;
+
+	case 1:
+		return Colors::Blue;
+		break;
+
+	case 2:
+		return Colors::Green;
+		break;
+
+	default:
+		return Colors::Black;
+		break;
+	}
 }

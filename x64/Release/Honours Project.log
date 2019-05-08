@@ -1,12 +1,43 @@
 ﻿  ACParticleSystem.cpp
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(47): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(48): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\stuhome\homedrive2$\1401292\github\honoursproject\acparticlesystem.cpp(49): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(47): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(48): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(49): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+  Camera.cpp
+  d3dApp.cpp
+  d3dUtil.cpp
+  DDSTextureLoader.cpp
+  GameTimer.cpp
+  GeometryGenerator.cpp
+  MathHelper.cpp
   App.cpp
+  Controls.cpp
+  GPUParticleManager.cpp
+c:\users\alastair ross\documents\github\honoursproject\gpuparticlemanager.cpp(24): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\gpuparticlemanager.cpp(25): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\alastair ross\documents\github\honoursproject\gpuparticlemanager.cpp(26): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_dx12.cpp
+  imgui_impl_win32.cpp
+  imgui_widgets.cpp
+  ModelLoader.cpp
+c:\users\alastair ross\documents\github\honoursproject\modelloader.cpp(42): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=GeometryGenerator::uint32
+          ]
+c:\users\alastair ross\documents\github\honoursproject\modelloader.cpp(102): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=GeometryGenerator::uint32
+          ]
+  ParticleManager.cpp
+c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(211): warning C4305: '-=': truncation from 'double' to 'float'
   UI.cpp
   Generating code
-  2 of 2985 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    3 functions had inline decision re-evaluated but remain unchanged
+  3067 of 3067 functions (100.0%) were compiled.
+    207 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
-  Honours Project.vcxproj -> \\StuHome\HomeDrive2$\1401292\GitHub\HonoursProject\x64\Release\Honours Project.exe
+  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\x64\Release\Honours Project.exe
