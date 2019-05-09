@@ -47,7 +47,7 @@ ParticleManager::~ParticleManager()
 	}
 }
 
-void ParticleManager::Update(float time, int num, DirectX::XMMATRIX mat)
+void ParticleManager::Update(float time, int num, DirectX::XMMATRIX mat, UI &mUi)
 {
 	currentNumberOfParticles = num;
 
@@ -55,7 +55,7 @@ void ParticleManager::Update(float time, int num, DirectX::XMMATRIX mat)
 	{
 		auto currVB = mParticles.at(c)->dynamicVB.get();
 			mParticles.at(c)->energy -= time;
-			UpdatePosition(c, time, currVB);
+			UpdatePosition(c, time, currVB, mUi);
 			mParticles.at(c)->geo->VertexBufferGPU = currVB->Resource();
 	}
 
@@ -176,7 +176,7 @@ bool ParticleManager::GenerateParticleMesh(Microsoft::WRL::ComPtr<ID3D12Device> 
 	return true;
 }
 
-void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Vertex>* buffer)
+void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Vertex>* buffer, UI &mUi)
 {
 	float fixedDeltaTime = 0.0178f;
 	if(mParticles.at(current)->accelertaion <= maxAcceleration)
@@ -187,13 +187,13 @@ void ParticleManager::UpdatePosition(int current, float time, UploadBuffer<Verte
 		mParticles.at(current)->position.y -= mParticles.at(current)->accelertaion / 30;
 
 		//Offset the cooridnates for each vertex
-		mParticles.at(current)->position.x += vert[i].Pos.x + (mParticles.at(current)->velocity.x*(fixedDeltaTime));
-		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(fixedDeltaTime));
-		mParticles.at(current)->position.z += vert[i].Pos.z + (mParticles.at(current)->velocity.z*(fixedDeltaTime));
+		mParticles.at(current)->position.x += vert[i].Pos.x*mUi.GetParticleSize() + (mParticles.at(current)->velocity.x*(fixedDeltaTime)) ;
+		mParticles.at(current)->position.y += vert[i].Pos.y + (mParticles.at(current)->velocity.y*(fixedDeltaTime)) ;
+		mParticles.at(current)->position.z += vert[i].Pos.z*mUi.GetParticleSize() + (mParticles.at(current)->velocity.z*(fixedDeltaTime)) ;
 
 		Vertex v;
 			v.Pos = mParticles.at(current)->position;
-			v.Color = XMFLOAT4(DirectX::Colors::White); 
+			v.Color = (XMFLOAT4)mUi.GetParColour(); 
 			v.texCoord = { 0.0f, 0.0f };
 			v.id = current;
 		buffer->CopyData(i, v);

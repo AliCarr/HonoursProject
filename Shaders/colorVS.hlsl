@@ -5,6 +5,47 @@ cbuffer cbPerObject : register(b0)
 	float gTime;
 };
 
+//cbuffer offsets : register(b1)
+//{
+//	float xOffset;
+//
+//};
+//
+//
+//cbuffer offsets : register(b2)
+//{
+//	float xO4ffset;
+//
+//};
+//
+//
+//cbuffer offsets : register(b3)
+//{
+//	float xOff3set;
+//
+//};
+//
+//
+//cbuffer offsets : register(b4)
+//{
+//	float xOf2fset;
+//
+//};
+//
+//
+//cbuffer offsets : register(b0)
+//{
+//	float xOff1set;
+//
+//};
+
+
+//cbuffer offsets : register(b5)
+//{
+//	float xOffs1et;
+//	float yOffs1et;
+//	float zOffs1et;
+//};
 
 struct VertexIn
 {
@@ -35,9 +76,9 @@ VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
 
-	vout.colour = vin.colour;
+	vout.colour = pulseColour;
 
-	vout.PosH = mul(float4(vin.PosL + gInput[vin.id].position, 1), gWorldViewProj);
+	vout.PosH = mul(float4(vin.PosL*gTime + gInput[vin.id].position, 1), gWorldViewProj);
 
 	return vout;
 }

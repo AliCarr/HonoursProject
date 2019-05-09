@@ -40,6 +40,14 @@ void UI::GUIInit(HWND wnd, ID3D12Device* device, ID3D12DescriptorHeap *heap)
 	CPUActive = true;
 	GPUActive = false;
 	ACActive = false;
+	particleSize = 1.f;
+	parBlue = 1.0;
+	parGreen = 1.0;
+	parRed = 1;
+
+	backRed = 0;
+	backGreen = 0;
+	backBlue = 0;
 }
 
 void UI::GUIUpdate()
@@ -81,42 +89,20 @@ void UI::GUIUpdate()
 		return;
 	}
 
-	ImGui::PushItemWidth(ImGui::GetFontSize() * -12);
+	ImGui::PushItemWidth(ImGui::GetFontSize() * -16);
 
 	if (ImGui::BeginMenuBar())
 	{
-		if (ImGui::BeginMenu("Colours"))
-		{
-			if (ImGui::MenuItem("Red", NULL, &colours[0]))
-			{
-				colour = 0;
-			}
-
-			if (ImGui::MenuItem("Blue", NULL, &colours[1]))
-			{
-				colour = 1;
-			}
-
-			if (ImGui::MenuItem("Green", NULL, &colours[2]))
-			{
-				colour = 2;
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Help"))
-		{
-			ImGui::MenuItem("Red", NULL, &colours[0]);
-			ImGui::MenuItem("Blue", NULL, &colours[1]);
-			ImGui::EndMenu();
-		}
+		
 		ImGui::EndMenuBar();
 
-		if (ImGui::CollapsingHeader("TestControls"))
-		{
+		ImGui::Text(" ");
+		ImGui::Text("Increase compute cycles (only applies to GPU and AC systems)");
 			ImGui::SliderInt("Amount of compute work", &amountOfComWork, 1, maxWork);
-		}
-		if (ImGui::CollapsingHeader("Systems"))
-		{
+	
+
+		ImGui::Text(" ");
+		ImGui::Text("System Type");
 			if (ImGui::Checkbox("CPU System", &CPUActive))
 			{
 				GPUActive = false;
@@ -137,11 +123,23 @@ void UI::GUIUpdate()
 				CPUActive = false;
 				activeSystem = AC;
 			}
-		}
-		if (ImGui::CollapsingHeader("Attributes"))
-		{
+			ImGui::Text(" ");
+		ImGui::Text("System Setting");
 			ImGui::SliderInt("Number Of Particles", &parNum, 1, maxParicles);
-		}
+			ImGui::SliderFloat("Size of Particles", &particleSize, 1.f, 10.f);
+
+			ImGui::Text(" ");
+			ImGui::Text("Particle Colour");
+			ImGui::SliderFloat("Red", &parRed, 0.f, 1.f);
+			ImGui::SliderFloat("Green", &parGreen, 0.f, 1.f);
+			ImGui::SliderFloat("Blue", &parBlue, 0.f, 1.f);		
+
+			ImGui::Text(" ");
+			ImGui::Text("Background Colour");
+			ImGui::SliderFloat("Background Red", &backRed, 0.f, 1.f);
+			ImGui::SliderFloat("Background Green", &backGreen, 0.f, 1.f);
+			ImGui::SliderFloat("Background Blue", &backBlue, 0.f, 1.f);
+
 
 		if (ImGui::CollapsingHeader("Information"))
 		{
@@ -175,22 +173,10 @@ void UI::GUIRender(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list)
 
 XMVECTORF32 UI::GetColour()
 {
-	switch(colour)
-	{
-	case 0:
-		return Colors::Red;
-		break;
+	return XMVECTORF32{ backRed, backGreen, backBlue , 1 };
+}
 
-	case 1:
-		return Colors::Blue;
-		break;
-
-	case 2:
-		return Colors::Green;
-		break;
-
-	default:
-		return Colors::Black;
-		break;
-	}
+XMVECTORF32 UI::GetParColour()
+{
+	 return XMVECTORF32{ parRed, parGreen, parBlue , 1};
 }

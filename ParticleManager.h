@@ -5,6 +5,7 @@
 //Needed for Srand
 #include <stdio.h>
 #include <time.h>
+#include "UI.h"
 
 class ParticleManager
 {
@@ -12,7 +13,7 @@ public:
 	ParticleManager(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList*, std::unique_ptr<MeshGeometry>&);
 	~ParticleManager();
 
-	void Update(float, int, DirectX::XMMATRIX);
+	void Update(float, int, DirectX::XMMATRIX, UI &mUi);
 	void Render(ComPtr<ID3D12DescriptorHeap>&);
 
 private: 
@@ -32,7 +33,7 @@ private:
 
 	//Functions
 	bool GenerateParticleMesh(ComPtr<ID3D12Device>&, ID3D12GraphicsCommandList*);
-	void UpdatePosition(int, float, UploadBuffer<Vertex>*);
+	void UpdatePosition(int, float, UploadBuffer<Vertex>*, UI &mUi);
 	void ParticleReset(int);
 	void BuildHeap();
 	void BuildPSO();
