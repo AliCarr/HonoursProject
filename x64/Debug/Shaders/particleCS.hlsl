@@ -10,10 +10,11 @@ struct ComputeData
 StructuredBuffer<ComputeData> gInput	:	register(t0);
 RWStructuredBuffer<ComputeData>	gOutput	:	register(u0);
 //uint	gOutput	:	register(b1);
-cbuffer Manipulaters : register(b0)
+cbuffer Manipulaters : register(b1)
 {
-	float test;
+	float size;
 }
+
 
 
 [numthreads(32, 1, 1)]
@@ -24,11 +25,18 @@ void UpdateWavesCS(int3 dispatchThreadID : SV_DispatchThreadID)
 
 	//Needs replaced with proper delta time
 	float3 deltaTime = { 0.0178, 0.0178, 0.0178 };
-	test;
-	//Add gravitational pull, then general velocity
-	gOutput[dispatchThreadID.x].position.y -= gOutput[dispatchThreadID.x].acceleration.y / 30;
-	gOutput[dispatchThreadID.x].position += gInput[dispatchThreadID.x].velocity*deltaTime;
 
+	////Add gravitational pull, then general velocity
+	//gOutput[dispatchThreadID.x].position.x *= offsetX;
+	//gOutput[dispatchThreadID.x].position.y *= offsetX;
+	//gOutput[dispatchThreadID.x].position.z *= offsetX;
+
+
+	gOutput[dispatchThreadID.x].position.y -= (gOutput[dispatchThreadID.x].acceleration.y / 30) ;
+	gOutput[dispatchThreadID.x].position.x += (gInput[dispatchThreadID.x].velocity.x )*deltaTime.x;
+	gOutput[dispatchThreadID.x].position.z += (gInput[dispatchThreadID.x].velocity.z )*deltaTime.z;
+	gOutput[dispatchThreadID.x].position.y += (gInput[dispatchThreadID.x].velocity.y )*deltaTime.y;
+//	gOutput[dispatchThreadID.x].position.x = gOutput[dispatchThreadID.x].position.x*size;
 	//Cap the velocity
 	if (gOutput[dispatchThreadID.x].velocity.x <= 0.0018)
 		gOutput[dispatchThreadID.x].velocity += gInput[dispatchThreadID.x].velocity / 10000;

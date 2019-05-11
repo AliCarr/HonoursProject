@@ -536,6 +536,9 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(cbvHeap->GetGPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	commandList->SetGraphicsRootDescriptorTable(1U, srvHandle);
+	commandList->SetGraphicsRoot32BitConstant(2, 2, 0);
+	commandList->SetGraphicsRoot32BitConstant(2, vert[0].Pos.y, sizeof(float));
+	commandList->SetGraphicsRoot32BitConstant(2, vert[0].Pos.z, sizeof(float));
 
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
@@ -640,7 +643,7 @@ void ACParticleSystem::BuildPSOs()
 void ACParticleSystem::BuildRootSignatures()
 {
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER slotRootParameter[2];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[3];
 	CD3DX12_DESCRIPTOR_RANGE range[1];
 	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 
@@ -650,9 +653,10 @@ void ACParticleSystem::BuildRootSignatures()
 
 	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 	slotRootParameter[1].InitAsDescriptorTable(1, &range[0], D3D12_SHADER_VISIBILITY_VERTEX);
+	slotRootParameter[2].InitAsConstants(3, 1);
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter, 0, nullptr,
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(3, slotRootParameter, 0, nullptr,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -686,7 +690,7 @@ void ACParticleSystem::BuildRootSignatures()
 	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
-	computeSlotRootParameter[4].InitAsConstants(1, 0); //register 1b
+	computeSlotRootParameter[4].InitAsConstants(1, 1); //register 1b
 
 	// A root signature is an array of root parameters.
 	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(5, computeSlotRootParameter,

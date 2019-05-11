@@ -72,6 +72,46 @@ void GPUParticleManager::BuildPSO(ComPtr<ID3DBlob> mcsByteCode, ComPtr<ID3D12Pip
 		mcsByteCode->GetBufferSize()
 	};
 	ThrowIfFailed(md3ddevice->CreateComputePipelineState(&computePSO, IID_PPV_ARGS(&pso)));
+
+
+	//mvsByteCode = d3dUtil::CompileShader(L"Shaders\\colorVS.hlsl", nullptr, "VS", "vs_5_0");
+	//mpsByteCode = d3dUtil::CompileShader(L"Shaders\\colorPS.hlsl", nullptr, "PS", "ps_5_0");
+	//mInputLayout =
+	//{
+	//	//Semantic Name, Semantic Index, Format, Input slot, Aligned Byte Offset, Input Slot Class, Instance Data Step Rate
+	//	{ "POSITION", 0,    DXGI_FORMAT_R32G32B32_FLOAT, 0,   0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	//{ "TEX",      0,       DXGI_FORMAT_R32G32_FLOAT, 0,  12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	//{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	//{ "ID",		  0,		   DXGI_FORMAT_R16_UINT, 0,  36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	//};
+
+
+	//D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
+	//ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	//psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+	//psoDesc.pRootSignature = mRootSignature.Get();
+	//psoDesc.VS =
+	//{
+	//	reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
+	//	mvsByteCode->GetBufferSize()
+	//};
+	//psoDesc.PS =
+	//{
+	//	reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
+	//	mpsByteCode->GetBufferSize()
+	//};
+	//psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	//psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	//psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	//psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	//psoDesc.SampleMask = UINT_MAX;
+	//psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	//psoDesc.NumRenderTargets = 1;
+	//psoDesc.RTVFormats[0] = mBackBufferFormat;
+	//psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
+	//psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+	//psoDesc.DSVFormat = mDepthStencilFormat;
+	//ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO["renderPSO"])));
 }
 
 //Called after "true" random is initialised 
@@ -94,7 +134,7 @@ void GPUParticleManager::CreateRootSignatures()
 {
 
 	// Root parameter can be a table, root descriptor or root constants.
-	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[4];
+	CD3DX12_ROOT_PARAMETER computeSlotRootParameter[5];
 
 	CD3DX12_DESCRIPTOR_RANGE ranges[4];
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -106,9 +146,11 @@ void GPUParticleManager::CreateRootSignatures()
 	computeSlotRootParameter[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
 	computeSlotRootParameter[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
+	computeSlotRootParameter[4].InitAsConstants(5, 1);
+
 
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(4, computeSlotRootParameter,
+	CD3DX12_ROOT_SIGNATURE_DESC computeRootSigDesc(5, computeSlotRootParameter,
 		0, nullptr);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -133,8 +175,11 @@ void GPUParticleManager::CreateRootSignatures()
 
 void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 {
+	float testing = 10;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(heap->GetGPUDescriptorHandleForHeapStart(), 1U, md3ddevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	
 	list->SetGraphicsRootDescriptorTable(1, srvHandle);
+
 
 	for (int c = 0; c < currentNumberOfParticles; c++)
 	{
@@ -159,7 +204,7 @@ void GPUParticleManager::Update(int num, int work)
 	currentAmountOfComputeWork = work;
 }
 
-void GPUParticleManager::Execute()
+void GPUParticleManager::Execute(UI &mUI)
 {
 	for (int c = 0; c < currentAmountOfComputeWork; c++)
 	{
@@ -194,9 +239,17 @@ void GPUParticleManager::Execute()
 		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(mComputeHeap->GetGPUDescriptorHandleForHeapStart(), SRV, m_srvUavDescriptorSize);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE uavHandle(mComputeHeap->GetGPUDescriptorHandleForHeapStart(), UAV, m_srvUavDescriptorSize);
 
+		
 		//set compute root descriptor table
 		list->SetComputeRootDescriptorTable(0U, srvHandle);
 		list->SetComputeRootDescriptorTable(2U, uavHandle);
+		list->SetComputeRoot32BitConstant(3, mUI.GetParticleSize(), 0);
+		list->SetComputeRoot32BitConstant(4, mUI.forceX,1);
+		list->SetComputeRoot32BitConstant(3, 10000, 2);
+		list->SetComputeRoot32BitConstant(3, mUI.forceZ,3);
+		list->SetComputeRoot32BitConstant(3, 1, 4);
+
+
 
 		list->Dispatch(static_cast<int>(ceil(numberOfParticles / 32)), 1, 1);
 
@@ -205,6 +258,8 @@ void GPUParticleManager::Execute()
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 				D3D12_RESOURCE_STATE_COPY_SOURCE));
 	}
+
+	size = mUI.GetParticleSize();
 }
 
 void GPUParticleManager::BuildResources()

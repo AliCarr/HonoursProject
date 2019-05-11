@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include <time.h>
+#include "UI.h"
 
 class GPUParticleManager
 {
@@ -10,14 +11,16 @@ public:
 	~GPUParticleManager();
 
 	void Render(ComPtr<ID3D12DescriptorHeap> &heap);
-	void Execute();
+	void Execute(UI &mUI);
 	void Update(int, int);
 	ID3D12Resource *pUavResource;
 
 private:
 	//Time Object (for srand)
 	time_t mTime;
-
+	float size = 5;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
+	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 	//Constants
 	static const int numberOfParticles = 6000;
 	const float width = 0.008f;

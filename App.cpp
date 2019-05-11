@@ -104,13 +104,13 @@ void App::Update(const GameTimer& gt)
 	
 	ObjectConstants objConstants;
 		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()));
-		objConstants.yPosiiton += gt.DeltaTime();
-		objConstants.pulseColour = XMFLOAT4(1, 0, 0, 1);
+		objConstants.yPosiiton = mUI->GetParticleSize();
+		objConstants.pulseColour = (XMFLOAT4)mUI->GetParColour();
 	mObjectCB->CopyData(0, objConstants);
 
 	switch (currentSystem)
 	{
-		case CPU:   pManager->Update(gt.DeltaTime(), mUI->GetNumberOfParticles(), XMMatrixTranspose(mControl->mCamera->GetWorldViewProj())); mUI->GUIUpdate(); break;
+		case CPU:   pManager->Update(gt.DeltaTime(), mUI->GetNumberOfParticles(), XMMatrixTranspose(mControl->mCamera->GetWorldViewProj()), *mUI); mUI->GUIUpdate(); break;
 		case GPU:   gpuPar->Update(mUI->GetNumberOfParticles(), mUI->GetComputeWorkAmount()); mUI->GUIUpdate(); break;
 		case AC:    acSystem->Update(objConstants, mUI->GetNumberOfParticles(), mUI->GetComputeWorkAmount()); mUI->GUIUpdate(); break;
 	}
@@ -200,7 +200,7 @@ void App::BuildRootSignature()
 
 		slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 		slotRootParameter[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
-		
+		//slotRootParameter[2].InitAsConstants(1, 2);
 
 	// A root signature is an array of root parameters.
 	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter, 0, nullptr,
@@ -350,7 +350,7 @@ void App::RecordRenderCommands()
 		mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 		mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
-		gpuPar->Execute();
+		gpuPar->Execute(*mUI);
 
 		mCommandList->SetPipelineState(mPSO["renderPSO"].Get());
 		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
