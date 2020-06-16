@@ -181,7 +181,7 @@ void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 	list->SetGraphicsRootDescriptorTable(1, srvHandle);
 
 
-	for (int c = 0; c < currentNumberOfParticles; c++)
+	for (int c = 0; c < 3; c++)
 	{
 		list->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
 
@@ -191,7 +191,7 @@ void GPUParticleManager::Render(ComPtr<ID3D12DescriptorHeap> &heap)
 		list->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
 
 		list->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
-			1,
+			1000000,
 			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
 			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
 			0);

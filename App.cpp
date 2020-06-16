@@ -52,12 +52,6 @@ App::~App()
 	{
 		delete gpuPar;
 		gpuPar = 0;
-	}
-
-	if (mBoxGeo)
-	{
-		delete &mBoxGeo;
-		mBoxGeo = 0;
 	}	
 }
 

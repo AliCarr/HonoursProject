@@ -540,7 +540,7 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 	commandList->SetGraphicsRoot32BitConstant(2, vert[0].Pos.y, sizeof(float));
 	commandList->SetGraphicsRoot32BitConstant(2, vert[0].Pos.z, sizeof(float));
 
-	for (int c = 0; c < currentNumberOfParticles; c++)
+	for (int c = 0; c < 2; c++)
 	{
 		commandList->IASetVertexBuffers(0, 1, &mParticles.at(c)->geo->VertexBufferView());
 
@@ -550,7 +550,7 @@ void ACParticleSystem::RecordRenderTasks(ComPtr<IDXGISwapChain> &chain, D3D12_RE
 		commandList->SetGraphicsRootDescriptorTable(0, cbvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		commandList->DrawIndexedInstanced(mParticles.at(c)->geo->DrawArgs["particle"].IndexCount,
-			1,
+			1000,
 			mParticles.at(c)->geo->DrawArgs["particle"].StartIndexLocation,
 			mParticles.at(c)->geo->DrawArgs["particle"].BaseVertexLocation,
 			0);

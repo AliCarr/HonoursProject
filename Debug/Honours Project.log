@@ -1,35 +1,9 @@
-﻿  ACParticleSystem.cpp
-c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(47): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(48): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(49): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\acparticlesystem.cpp(300): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
-  Camera.cpp
-  d3dApp.cpp
-  d3dUtil.cpp
-c:\users\alastair ross\documents\github\honoursproject\common\d3dutil.cpp(30): warning C4244: 'argument': conversion from 'std::streamoff' to 'SIZE_T', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\common\d3dutil.cpp(70): warning C4244: '=': conversion from 'UINT64' to 'LONG_PTR', possible loss of data
-  DDSTextureLoader.cpp
-  GameTimer.cpp
-  GeometryGenerator.cpp
-  MathHelper.cpp
-  App.cpp
-  Controls.cpp
-c:\users\alastair ross\documents\github\honoursproject\controls.cpp(7): warning C4316: 'Camera': object allocated on the heap may not be aligned 16
-  GPUParticleManager.cpp
-c:\users\alastair ross\documents\github\honoursproject\gpuparticlemanager.cpp(24): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\gpuparticlemanager.cpp(25): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\gpuparticlemanager.cpp(26): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\gpuparticlemanager.cpp(326): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
-  imgui.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_impl_dx12.cpp
-  imgui_impl_win32.cpp
-  imgui_widgets.cpp
-  ModelLoader.cpp
-  ParticleManager.cpp
-c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(134): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
-c:\users\alastair ross\documents\github\honoursproject\particlemanager.cpp(211): warning C4305: '-=': truncation from 'double' to 'float'
-  UI.cpp
-  Generating Code...
-  Honours Project.vcxproj -> C:\Users\Alastair Ross\Documents\GitHub\HonoursProject\Debug\Honours Project.exe
+﻿  GPUParticleManager.cpp
+g:\github\des506stable\honoursproject\gpuparticlemanager.cpp(24): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+g:\github\des506stable\honoursproject\gpuparticlemanager.cpp(25): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+g:\github\des506stable\honoursproject\gpuparticlemanager.cpp(26): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+g:\github\des506stable\honoursproject\gpuparticlemanager.cpp(246): warning C4244: 'argument': conversion from 'float' to 'UINT', possible loss of data
+g:\github\des506stable\honoursproject\gpuparticlemanager.cpp(247): warning C4244: 'argument': conversion from 'float' to 'UINT', possible loss of data
+g:\github\des506stable\honoursproject\gpuparticlemanager.cpp(249): warning C4244: 'argument': conversion from 'float' to 'UINT', possible loss of data
+g:\github\des506stable\honoursproject\gpuparticlemanager.cpp(381): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+  Honours Project.vcxproj -> G:\Github\DES506Stable\HonoursProject\Debug\Honours Project.exe
